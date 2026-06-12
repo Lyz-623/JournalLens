@@ -4,9 +4,9 @@
 
 # JournalLens
 
-**A Zotero plugin for following journals, scanning recent papers, viewing abstracts and validated body figures, switching EN/中文, and saving papers to Zotero in one click.**
+**A Zotero plugin for following journals, scanning recent papers, translating abstracts, viewing validated article figures, and saving papers to Zotero in one click.**
 
-**JournalLens 是一个 Zotero 插件：在 Zotero 内关注期刊、浏览近期论文、查看摘要与正文图片、中英文切换，并一键保存到文献库。**
+**JournalLens 是一个 Zotero 期刊追踪插件：在 Zotero 里关注期刊、浏览近期论文、翻译摘要、查看正文 Figure，并一键保存到文献库。**
 
 [Latest release](https://github.com/Lyz-623/JournalLens/releases/latest) · [Changelog](CHANGELOG.md) · [Support](DONATE.md)
 
@@ -16,46 +16,56 @@
 
 ## Preview / 功能预览
 
-<div align="center">
-<img src="docs/window.svg" alt="JournalLens main window" width="92%"/>
-</div>
+真实运行截图：
 
 <div align="center">
-<img src="docs/workflow.svg" alt="JournalLens workflow" width="92%"/>
+<img src="docs/journallens-screenshot.png" alt="JournalLens running in Zotero" width="94%"/>
 </div>
 
-## Features / 主要功能
+工作流程：
 
-- Follow journals by name or ISSN through Crossref.
-  通过期刊名或 ISSN 关注期刊。
-- Show papers published in the last 7 days by default, with a saved setting for 1-180 days.
-  默认抓取近 7 天发表的论文，可在设置中保存为 1-180 天。
-- Display title, authors, journal, date, abstract, OA badge and validated body / Extended Figure strip when available.
-  展示标题、作者、期刊、日期、摘要、OA 标识，以及可验证的正文图 / Extended Figure。
-- Translate titles and abstracts between English and Chinese.
-  支持标题与摘要中英互译。
-- Filter out obvious non-research content such as news, corrections and editorials.
-  可过滤新闻、勘误、社论等非研究内容。
-- Add a paper to Zotero by DOI with one click.
-  一键按 DOI 添加到 Zotero 文献库。
-- Configure language, fetch window, cache, translation provider and figure loading in Zotero Settings.
-  可在 Zotero 设置中调整语言、抓取天数、缓存、翻译服务与图片加载。
+<div align="center">
+<img src="docs/workflow.svg" alt="JournalLens workflow" width="94%"/>
+</div>
+
+## What It Does / 它解决什么问题
+
+JournalLens is designed for researchers who already live in Zotero but still need to check journal websites, copy abstracts into translators, and manually import interesting papers. It brings that daily scanning workflow into one Zotero window.
+
+JournalLens 面向每天需要追踪期刊更新的研究者：不用频繁打开不同期刊主页，也不用手动复制摘要翻译或再去导入 Zotero。插件把“找新论文、看摘要、看 Figure、保存文献”放在同一个 Zotero 窗口里。
+
+## Highlights / 主要功能
+
+| Feature | Details |
+|---|---|
+| Journal following / 关注期刊 | Search by journal name or ISSN through Crossref, then keep a followed-journal list in Zotero. |
+| Recent-paper feed / 近期论文流 | Fetch papers from the last 7 days by default. The range can be changed and saved in settings from 1 to 180 days. |
+| Abstract recovery / 摘要补全 | Uses Crossref, Europe PMC and publisher-page metadata fallbacks when abstracts are missing. |
+| Body figures / 正文 Figure | Shows only validated `Fig. N` / `Extended Fig. N` images. Preview images, TOC graphics and blank thumbnails are filtered out. |
+| Search in feed / 文章内搜索 | Search loaded titles and abstracts, with highlighted matches. |
+| EN / 中文 | Switch UI language and translate titles or abstracts between English and Chinese. |
+| One-click import / 一键导入 | Add a paper to Zotero by DOI with full metadata. |
+| Zotero settings / 设置项 | Configure language, fetch window, cache, translation provider, research-content filtering and figure loading. |
 
 ## Install / 安装
 
 1. Download `journallens-0.3.6.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest).
-2. Open Zotero → **Tools → Plugins**.
-3. Click the gear icon → **Install Plugin From File…** and choose the `.xpi`.
+2. Open Zotero, then go to **Tools → Plugins**.
+3. Click the gear icon and choose **Install Plugin From File…**.
+4. Select the downloaded `.xpi`, then restart Zotero if prompted.
 
-需要 Zotero 7 或更高版本。浏览器如果直接打开 `.xpi`，请右键链接并选择“另存为”。
+Requirements: Zotero 7 or later. If your browser opens the `.xpi` file directly, right-click the release asset and choose “Save link as…”.
 
-## Usage / 使用
+## Usage / 使用方式
 
 1. Open JournalLens from the Zotero toolbar button or **Tools → JournalLens**.
-2. Use the search box at the top-left to add journals.
-3. Browse recent papers, expand abstracts, click figures for a larger view, translate with the EN/中文 control, or open the publisher page.
-4. Click **Add to Zotero** to save a paper.
-5. Open **Zotero Settings → JournalLens** to change defaults.
+2. Add journals from the search box at the top-left.
+3. Choose **All journals** or a specific journal in the sidebar.
+4. Scan titles, authors, dates, abstracts and available figures.
+5. Use the title/abstract search box to filter the currently loaded feed.
+6. Click a figure to open the zoomable viewer, then switch images with previous/next controls.
+7. Click **Add to Zotero** to save a paper.
+8. Open **Zotero Settings → JournalLens** to change defaults.
 
 ## Figure Loading / 图片说明
 
@@ -67,9 +77,7 @@ JournalLens tries several sources for article figures:
 - Unpaywall open-access article pages
 - article-body or Extended Figure containers exposed in publisher HTML
 
-Figures are displayed only when JournalLens can identify a real `Fig. N` or `Extended Fig. N` label and load a usable image. Preview images, TOC graphics, graphical abstracts and blank/low-quality thumbnails are filtered out.
-
-Figure extraction is best-effort. Some publishers block automated HTML access, hide figures behind scripts, or expose only paywalled PDFs, so not every article can show figures.
+Figures are displayed only when JournalLens can identify a real `Fig. N` or `Extended Fig. N` label and load a usable image. The plugin keeps the source figure numbering, prefers high-resolution image candidates, removes duplicates, and skips blank or low-quality thumbnail results.
 
 图片抓取是尽力而为：开放获取文章和公开 HTML 页面效果最好；如果出版商屏蔽自动访问、图片由脚本动态加载，或正文只在付费 PDF 中，插件可能只能显示文字信息。
 
@@ -111,4 +119,12 @@ See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Support / 支持
 
-JournalLens is free and open source. If it saves time, you can support development through [DONATE.md](DONATE.md) or the in-plugin Donate panel.
+JournalLens is free and open source. If it saves you time, a small tip or a GitHub star helps keep the updates coming.
+
+JournalLens 免费开源。如果它帮你节省了时间，欢迎 Star 或打赏支持。
+
+| PayPal | WeChat Pay / 微信支付 | Alipay / 支付宝 |
+|:---:|:---:|:---:|
+| <img src="content/donate/paypal.jpg" width="180" alt="PayPal QR"/> | <img src="content/donate/wechat.jpg" width="180" alt="WeChat Pay QR"/> | <img src="content/donate/alipay.jpg" width="180" alt="Alipay QR"/> |
+
+More details: [DONATE.md](DONATE.md)
