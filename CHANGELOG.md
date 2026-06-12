@@ -8,6 +8,27 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.5] — 2026-06-13
+
+Abstract and body-figure source patch.
+
+### Added / 新增
+- Added publisher-page abstract fallback for articles missing abstracts in
+  Crossref and Europe PMC, using `citation_abstract`, description metadata and
+  JSON-LD `abstract` / `description`. 增加出版商页面摘要兜底。
+- Added a Crossref `/works?filter=issn:...` fallback when the journal-specific
+  Crossref endpoint returns no items. 增加期刊抓取备用入口。
+
+### Changed / 变更
+- Figure extraction now keeps only article-body or extended figures. Preview,
+  social preview, `og:image`, JSON-LD image, graphical abstract and TOC graphics
+  are no longer displayed as figures. Figure 仅保留正文或 extended figure。
+- All displayed figure labels are normalized to `Fig. N` style. 统一 Figure 命名格式。
+- Bumped the figure cache schema so older preview-based figure results are
+  discarded. 更新缓存版本以清理旧的 preview Figure。
+
+---
+
 ## [0.3.4] — 2026-06-13
 
 Figure cleanup patch.
@@ -147,6 +168,7 @@ Initial release.
 - Bilingual (en-US / zh-CN) Fluent localisation, light/dark theme. 中英双语、深色模式。
 - Preferences pane, XPI build script, auto-update manifest. 偏好设置、打包脚本、自动更新清单。
 
+[0.3.5]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.5
 [0.3.4]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.4
 [0.3.3]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.3
 [0.3.2]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.2

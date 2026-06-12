@@ -43,7 +43,7 @@
 
 ## Install / 安装
 
-1. Download `journallens-0.3.4.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest).
+1. Download `journallens-0.3.5.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest).
 2. Open Zotero → **Tools → Plugins**.
 3. Click the gear icon → **Install Plugin From File…** and choose the `.xpi`.
 
@@ -63,9 +63,9 @@ JournalLens tries several sources for figures and previews:
 
 - Europe PMC open-access full-text XML
 - Crossref full-text links
-- DOI and publisher landing pages
-- Unpaywall open-access landing pages
-- publisher metadata such as `og:image`, JSON-LD and high-resolution figure attributes
+- DOI and publisher article pages
+- Unpaywall open-access article pages
+- article-body or extended figure containers exposed in publisher HTML
 
 Figure extraction is best-effort. Some publishers block automated HTML access, hide figures behind scripts, or expose only paywalled PDFs, so not every article can show figures.
 
@@ -95,6 +95,7 @@ The packaged plugin will be created at `build/journallens-<version>.xpi`.
 
 ## Version Notes / 版本记录
 
+- `0.3.5`: publisher-page abstract fallback, Crossref works fallback, body/extended figures only, `Fig. N` label normalization.
 - `0.3.4`: clears stale figure cache, stronger duplicate removal, caption width wrapping, centered previous/next figure controls.
 - `0.3.3`: in-feed title/abstract search, highlighted matches, deduplicated figures, zoomable figure lightbox with previous/next navigation.
 - `0.3.2`: UI polish, fixed language switching, fixed settings pane, lens + J toolbar icon, stronger figure parsing.

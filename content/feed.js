@@ -541,37 +541,14 @@ function parseFigures(xmlText, pmcid) {
 			|| graphic.getAttribute("href"));
 	let firstGraphic = (el) => el && el.querySelector("graphic, media");
 
-	// Graphical abstract / TOC graphic (preferred thumbnail)
-	let graphicalAbstract = null;
-	for (let fig of doc.querySelectorAll("fig")) {
-		let type = (fig.getAttribute("fig-type") || "").toLowerCase();
-		let labelText = (fig.querySelector("label")
-			|| fig.querySelector("caption")
-			|| {}).textContent || "";
-		if (type.includes("graphic") || /graphical abstract/i.test(labelText)) {
-			let href = graphicHref(firstGraphic(fig));
-			if (href) {
-				graphicalAbstract = { label: "", caption: labelText.trim(),
-					urls: JournalLens.figureImageURLs(pmcid, href) };
-				break;
-			}
-		}
-	}
-	if (!graphicalAbstract) {
-		let absGraphic = doc.querySelector('abstract[abstract-type="graphical"] graphic, abstract[abstract-type="graphical"] media');
-		let href = graphicHref(absGraphic);
-		if (href) {
-			graphicalAbstract = { label: "", caption: "",
-				urls: JournalLens.figureImageURLs(pmcid, href) };
-		}
-	}
-
 	// Main body figures
 	let figures = [];
 	for (let fig of doc.querySelectorAll("fig")) {
 		let type = (fig.getAttribute("fig-type") || "").toLowerCase();
-		if (type.includes("graphic")) {
-			continue; // already captured as graphical abstract
+		let labelText = (fig.querySelector("label") || {}).textContent || "";
+		let captionText = (fig.querySelector("caption") || {}).textContent || "";
+		if (isPreviewFigure([type, labelText, captionText].join(" "))) {
+			continue;
 		}
 		let href = graphicHref(firstGraphic(fig));
 		if (!href) {
@@ -585,7 +562,7 @@ function parseFigures(xmlText, pmcid) {
 			urls: JournalLens.figureImageURLs(pmcid, href)
 		});
 	}
-	return { graphicalAbstract, figures };
+	return { figures };
 }
 
 function cleanText(text) {
@@ -601,11 +578,28 @@ function normalizeFigureText(text) {
 
 function splitFigureLabel(text) {
 	let value = cleanText(text);
-	let match = value.match(/^((?:fig(?:ure)?\.?\s*)?\d+[a-z]?|fig(?:ure)?\.?\s*\d+[a-z]?)(?:\s*[:.\-–—]\s+)(.+)$/i);
+	let match = value.match(/^((?:(?:extended|supplementary|suppl\.?|data)\s+)?(?:fig(?:ure)?\.?\s*)?[s]?\d+[a-z]?)(?:\s*[:.\-–—]\s+)(.+)$/i);
 	if (match && match[2] && match[2].length > 10) {
-		return { label: cleanText(match[1]).replace(/^figure/i, "Fig."), caption: cleanText(match[2]) };
+		return { label: normalizeFigureLabel(match[1]), caption: cleanText(match[2]) };
 	}
-	return { label: value, caption: "" };
+	return { label: normalizeFigureLabel(value), caption: "" };
+}
+
+function normalizeFigureLabel(label) {
+	let value = cleanText(label);
+	if (!value) {
+		return "";
+	}
+	let match = value.match(/\b(?:fig(?:ure)?\.?\s*)?([s]?\d+[a-z]?)\b/i);
+	if (!match) {
+		return value;
+	}
+	return "Fig. " + match[1].toUpperCase();
+}
+
+function isPreviewFigure(text) {
+	return /(graphical\s+abstract|visual\s+abstract|table\s+of\s+contents|toc\s+graphic|cover\s+image|social\s+preview|preview\s+image|thumbnail|teaser|scheme\s+preview)/i
+		.test(text || "");
 }
 
 function captionWithoutLabel(label, caption) {
@@ -648,6 +642,9 @@ function cleanFigure(figure) {
 	}
 	else if (split.caption && normalizeFigureText(split.caption) === normalizeFigureText(caption)) {
 		label = split.label;
+	}
+	else {
+		label = normalizeFigureLabel(label);
 	}
 	caption = stripCaptionLabel(label, caption);
 	return { label, caption, urls };
@@ -701,7 +698,7 @@ function figureNumberKey(figure) {
 	if (!clean) {
 		return "";
 	}
-	let labelMatch = clean.label.match(/^(?:fig(?:ure)?\.?\s*)?([1-9]\d*)([a-z])?$/i);
+	let labelMatch = clean.label.match(/^Fig\.\s*([s]?[1-9]\d*)([a-z])?$/i);
 	let text = [clean.label, clean.caption].filter(Boolean).join(" ");
 	let match = labelMatch || text.match(/\bfig(?:ure)?\.?\s*([1-9]\d*)([a-z])?\b/i);
 	return match ? "fig" + match[1] + (match[2] || "").toLowerCase() : "";
@@ -729,13 +726,27 @@ function createFigureSeen(seedFigures = []) {
 	return seen;
 }
 
+function normalizeFigureListLabels(figures) {
+	return (figures || []).map((figure, index) => {
+		let clean = cleanFigure(figure);
+		if (!clean) {
+			return null;
+		}
+		let label = normalizeFigureLabel(clean.label);
+		if (!/^Fig\.\s*[S]?\d+/i.test(label)) {
+			label = "Fig. " + (index + 1);
+		}
+		return { label, caption: clean.caption, urls: clean.urls };
+	}).filter(Boolean);
+}
+
 function dedupeFigures(figures) {
 	let out = [];
 	let seen = createFigureSeen();
 	for (let figure of figures || []) {
 		addFigure(out, seen, figure);
 	}
-	return out;
+	return normalizeFigureListLabels(out);
 }
 
 function imageFromSrcset(srcset) {
@@ -843,48 +854,6 @@ function addFigure(list, seen, figure) {
 	list.push(clean);
 }
 
-function parseJSONLDImages(doc, baseURL, seen) {
-	let figures = [];
-	for (let script of doc.querySelectorAll('script[type="application/ld+json"]')) {
-		let raw = script.textContent;
-		if (!raw || !raw.trim()) {
-			continue;
-		}
-		try {
-			let data = JSON.parse(raw);
-			let nodes = Array.isArray(data) ? data : [data];
-			for (let node of nodes.slice()) {
-				if (node && Array.isArray(node["@graph"])) {
-					nodes.push(...node["@graph"]);
-				}
-			}
-			for (let node of nodes) {
-				let image = node.image;
-				let candidates = [];
-				if (typeof image === "string") {
-					candidates.push(image);
-				}
-				else if (Array.isArray(image)) {
-					for (let item of image) {
-						candidates.push(typeof item === "string" ? item : item && item.url);
-					}
-				}
-				else if (image && image.url) {
-					candidates.push(image.url);
-				}
-				for (let value of candidates) {
-					let url = JournalLens._resolveURL(baseURL, value);
-					addFigure(figures, seen, figureFromURL(url, "Preview", "Structured article image"));
-				}
-			}
-		}
-		catch (e) {
-			// Ignore malformed JSON-LD blocks from publisher pages.
-		}
-	}
-	return figures;
-}
-
 function metaOrLinkURL(el, baseURL) {
 	if (!el) {
 		return "";
@@ -926,6 +895,16 @@ function textFromFirst(container, selectors) {
 }
 
 function figureFromContainer(container, baseURL) {
+	let marker = [
+		container.className || "",
+		container.id || "",
+		container.getAttribute("aria-label") || "",
+		container.getAttribute("data-fig-id") || "",
+		container.getAttribute("data-figure-id") || ""
+	].join(" ");
+	if (isPreviewFigure(marker)) {
+		return null;
+	}
 	let url = figureURLFromContainer(container, baseURL);
 	if (!isUsefulImageURL(url)) {
 		return null;
@@ -944,61 +923,20 @@ function parseHTMLVisuals(htmlText, baseURL) {
 	let doc = new DOMParser().parseFromString(htmlText, "text/html");
 	let seen = createFigureSeen();
 	let figures = [];
-	let graphicalAbstract = null;
-
-	let metaSelectors = [
-		'meta[name="citation_graphical_abstract"]',
-		'meta[name="citation_image"]',
-		'meta[property="og:image"]',
-		'meta[property="og:image:secure_url"]',
-		'meta[name="twitter:image"]',
-		'meta[name="thumbnail"]',
-		'link[rel="image_src"]'
-	];
-	for (let selector of metaSelectors) {
-		let url = metaOrLinkURL(doc.querySelector(selector), baseURL);
-		if (isUsefulImageURL(url)) {
-			graphicalAbstract = figureFromURL(url, "Preview", "Publisher page preview image");
-			addFigure([], seen, graphicalAbstract);
-			break;
-		}
-	}
-
-	for (let f of parseJSONLDImages(doc, baseURL, seen)) {
-		if (!graphicalAbstract) {
-			graphicalAbstract = f;
-		}
-		else {
-			figures.push(f);
-		}
-	}
 
 	let containers = [
-		"figure", "[class*='figure']", "[class*='fig-']", "[id^='fig']",
-		"[id*='figure']", "[data-fig-id]", "[data-figure-id]"
+		"article figure", "main figure", "[role='main'] figure", "figure",
+		"[class*='figure']", "[class*='fig-']", "[id^='fig']",
+		"[id*='figure']", "[data-fig-id]", "[data-figure-id]",
+		"[class*='extended']"
 	].join(",");
 	for (let fig of doc.querySelectorAll(containers)) {
-		if (figures.length >= 8) {
+		if (figures.length >= 12) {
 			break;
 		}
 		addFigure(figures, seen, figureFromContainer(fig, baseURL));
 	}
-
-	for (let img of doc.querySelectorAll("img")) {
-		if (figures.length >= 8) {
-			break;
-		}
-		let alt = cleanText(img.getAttribute("alt") || img.getAttribute("title"));
-		let url = imageURLFromElement(img, baseURL);
-		let semantic = /(fig(?:ure)?\.?\s*\d*|graphical|abstract|toc|scheme|diagram|chart|plot)/i
-			.test([url, alt, img.className || "", img.id || ""].join(" "));
-		if (!semantic || !isUsefulImageURL(url)) {
-			continue;
-		}
-		addFigure(figures, seen, figureFromURL(url, alt || "Figure", alt));
-	}
-
-	return { graphicalAbstract, figures };
+	return { figures };
 }
 
 function graphicHrefFromXML(graphic) {
@@ -1025,10 +963,13 @@ function genericGraphicURLs(baseURL, href) {
 function parseXMLVisuals(xmlText, baseURL) {
 	let doc = new DOMParser().parseFromString(xmlText, "text/xml");
 	let figures = [];
-	let graphicalAbstract = null;
 	for (let fig of doc.querySelectorAll("fig, figure")) {
 		let label = cleanText((fig.querySelector("label") || {}).textContent);
 		let caption = cleanText((fig.querySelector("caption, figcaption") || {}).textContent);
+		let marker = [fig.getAttribute("fig-type") || "", label, caption].join(" ");
+		if (isPreviewFigure(marker)) {
+			continue;
+		}
 		let href = graphicHrefFromXML(fig.querySelector("graphic, media, img"));
 		if (!href) {
 			continue;
@@ -1038,19 +979,12 @@ function parseXMLVisuals(xmlText, baseURL) {
 			caption,
 			urls: genericGraphicURLs(baseURL, href)
 		};
-		let marker = [fig.getAttribute("fig-type") || "", label, caption].join(" ");
-		if (!graphicalAbstract && /(graphical|toc|abstract)/i.test(marker)) {
-			graphicalAbstract = figure;
-		}
-		else {
-			figures.push(figure);
-		}
+		figures.push(figure);
 	}
-	return { graphicalAbstract, figures };
+	return { figures };
 }
 
 async function fetchPublisherVisuals(article) {
-	let graphicalAbstract = null;
 	let figures = [];
 	let seen = createFigureSeen();
 	let pages = await JournalLens.getVisualSourcePages(article);
@@ -1061,21 +995,13 @@ async function fetchPublisherVisuals(article) {
 			let parsed = /<\s*(article|fig|figure|graphic|media)(\s|>)/i.test(page.text)
 				? parseXMLVisuals(page.text, baseURL)
 				: parseHTMLVisuals(page.text, baseURL);
-			if (!parsed.graphicalAbstract && (!parsed.figures || !parsed.figures.length)) {
+			if (!parsed.figures || !parsed.figures.length) {
 				parsed = parseHTMLVisuals(page.text, baseURL);
-			}
-			if (!graphicalAbstract && parsed.graphicalAbstract) {
-				graphicalAbstract = cleanFigure(parsed.graphicalAbstract);
-				if (graphicalAbstract) {
-					for (let url of graphicalAbstract.urls) {
-						seen.urls.add(figureURLKey(url));
-					}
-				}
 			}
 			for (let figure of parsed.figures || []) {
 				addFigure(figures, seen, figure);
 			}
-			if (graphicalAbstract && figures.length >= 6) {
+			if (figures.length >= 8) {
 				break;
 			}
 		}
@@ -1083,7 +1009,7 @@ async function fetchPublisherVisuals(article) {
 			Zotero.debug("JournalLens: publisher visuals failed for " + url + ": " + e);
 		}
 	}
-	return { graphicalAbstract, figures };
+	return { figures };
 }
 
 async function loadFiguresForCard(card) {
@@ -1102,22 +1028,19 @@ async function loadFiguresForCard(card) {
 	try {
 		if (article.figures === null) {
 			let allFigures = [];
-			let graphicalAbstract = null;
 			if (article.pmcid) {
 				try {
 					let xml = await JournalLens.fetchFullTextXML(article.pmcid);
 					let parsed = parseFigures(xml, article.pmcid);
 					allFigures = parsed.figures || [];
-					graphicalAbstract = parsed.graphicalAbstract;
 				}
 				catch (e) {
 					Zotero.debug("JournalLens: Europe PMC figures failed for "
 						+ article.pmcid + ": " + e);
 				}
 			}
-			if (!graphicalAbstract || !allFigures.length) {
+			if (!allFigures.length) {
 				let fallback = await fetchPublisherVisuals(article);
-				graphicalAbstract = graphicalAbstract || fallback.graphicalAbstract;
 				let seen = createFigureSeen(allFigures);
 				for (let figure of fallback.figures || []) {
 					addFigure(allFigures, seen, figure);
@@ -1125,12 +1048,11 @@ async function loadFiguresForCard(card) {
 			}
 			let combined = [];
 			let seen = createFigureSeen();
-			addFigure(combined, seen, graphicalAbstract);
 			for (let figure of allFigures) {
 				addFigure(combined, seen, figure);
 			}
 			article.figures = combined;
-			article.graphicalAbstract = cleanFigure(graphicalAbstract);
+			article.graphicalAbstract = null;
 		}
 	}
 	catch (e) {

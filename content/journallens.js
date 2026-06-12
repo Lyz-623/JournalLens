@@ -9,8 +9,8 @@
  *  - Crossref REST API: latest works per journal (by ISSN), all disciplines.
  *  - Europe PMC REST API: abstracts, publication types (for filtering),
  *    open-access flags and, for OA articles, full-text figures with captions.
- *  - Publisher / OA landing pages: graphical abstracts, social preview images
- *    and figure thumbnails when structured full-text XML is unavailable.
+ *  - Publisher / OA landing pages: missing abstracts and in-article figures
+ *    when structured full-text XML is unavailable.
  *  - Translation: Google (keyless gtx endpoint) with a MyMemory fallback.
  */
 var JournalLens = {
@@ -19,7 +19,7 @@ var JournalLens = {
 	rootURI: null,
 
 	PREF_BRANCH: "extensions.journallens.",
-	CACHE_SCHEMA: "figures-v4",
+	CACHE_SCHEMA: "figures-v5-body-only",
 	CROSSREF_MAILTO: "yunze623@gmail.com",
 	HOMEPAGE_URL: "https://github.com/Lyz-623/JournalLens",
 	DONATE_URL: "https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md",
@@ -461,13 +461,29 @@ var JournalLens = {
 		if (days && days > 0) {
 			filters.push("from-pub-date:" + this._dateDaysAgo(days));
 		}
-		let url = "https://api.crossref.org/journals/" + encodeURIComponent(issn)
+		let select = "DOI,title,author,abstract,issued,published,published-online,published-print,container-title,volume,issue,page,URL,link,ISSN";
+		let journalURL = "https://api.crossref.org/journals/" + encodeURIComponent(issn)
 			+ "/works?sort=published&order=desc&rows=" + rows
 			+ "&filter=" + encodeURIComponent(filters.join(","))
-			+ "&select=DOI,title,author,abstract,issued,published,published-online,published-print,container-title,volume,issue,page,URL,link"
+			+ "&select=" + select
 			+ "&mailto=" + this.CROSSREF_MAILTO;
-		let data = await this._getJSON(url);
-		let items = (data.message && data.message.items) || [];
+		let data;
+		try {
+			data = await this._getJSON(journalURL);
+		}
+		catch (e) {
+			Zotero.debug("JournalLens: Crossref journal endpoint failed for "
+				+ issn + ": " + e);
+		}
+		let items = (data && data.message && data.message.items) || [];
+		if (!items.length) {
+			let genericURL = "https://api.crossref.org/works?sort=published&order=desc&rows=" + rows
+				+ "&filter=" + encodeURIComponent(filters.concat(["issn:" + issn]).join(","))
+				+ "&select=" + select
+				+ "&mailto=" + this.CROSSREF_MAILTO;
+			let fallbackData = await this._getJSON(genericURL);
+			items = (fallbackData.message && fallbackData.message.items) || [];
+		}
 		return items
 			.filter(w => w.title && w.title.length)
 			.map(w => ({
@@ -481,7 +497,8 @@ var JournalLens = {
 				issue: w.issue || "",
 				pages: w.page || "",
 				abstract: this._stripJATS(w.abstract),
-				url: w.URL || ("https://doi.org/" + w.DOI),
+				abstractSource: w.abstract ? "crossref" : "",
+				url: w.URL || (w.DOI ? "https://doi.org/" + w.DOI : ""),
 				fullTextLinks: (w.link || [])
 					.map(l => l && l.URL)
 					.filter(Boolean),
@@ -517,6 +534,7 @@ var JournalLens = {
 					}
 					if (!article.abstract && r.abstractText) {
 						article.abstract = this._stripJATS(r.abstractText);
+						article.abstractSource = "europepmc";
 					}
 					article.pmcid = r.pmcid || null;
 					article.isOpenAccess = r.isOpenAccess === "Y";
@@ -531,6 +549,128 @@ var JournalLens = {
 			}
 			catch (e) {
 				Zotero.debug("JournalLens: Europe PMC enrichment failed: " + e);
+			}
+		}
+		return articles;
+	},
+
+	_decodeEntities(text) {
+		return (text || "")
+			.replace(/&nbsp;/g, " ")
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&amp;/g, "&")
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;|&apos;/g, "'")
+			.replace(/&#(\d+);/g, (m, n) => String.fromCharCode(parseInt(n)))
+			.replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCharCode(parseInt(n, 16)));
+	},
+
+	_normalizeAbstract(text) {
+		let value = this._decodeEntities(String(text || ""))
+			.replace(/<[^>]+>/g, " ")
+			.replace(/\s+/g, " ")
+			.trim()
+			.replace(/^Abstract\s*[:.]?\s*/i, "");
+		if (value.length < 40) {
+			return "";
+		}
+		if (/^(home|search|privacy|cookie|javascript|sign in|subscribe)\b/i.test(value)) {
+			return "";
+		}
+		return value;
+	},
+
+	_tagAttrs(tag) {
+		let attrs = {};
+		let re = /([\w:-]+)\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/g;
+		let m;
+		while ((m = re.exec(tag))) {
+			attrs[m[1].toLowerCase()] = m[3] || m[4] || m[5] || "";
+		}
+		return attrs;
+	},
+
+	_metaAbstractFromHTML(html) {
+		let candidates = [
+			"citation_abstract", "dc.description", "dcterms.description",
+			"description", "og:description", "twitter:description"
+		];
+		let re = /<meta\b[^>]*>/gi;
+		let m;
+		while ((m = re.exec(html || ""))) {
+			let attrs = this._tagAttrs(m[0]);
+			let key = (attrs.name || attrs.property || "").toLowerCase();
+			if (candidates.includes(key)) {
+				let abstract = this._normalizeAbstract(attrs.content);
+				if (abstract) {
+					return abstract;
+				}
+			}
+		}
+		return "";
+	},
+
+	_jsonLDAbstractFromHTML(html) {
+		let re = /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+		let m;
+		while ((m = re.exec(html || ""))) {
+			try {
+				let data = JSON.parse(this._decodeEntities(m[1]).trim());
+				let nodes = Array.isArray(data) ? data.slice() : [data];
+				for (let i = 0; i < nodes.length; i++) {
+					let node = nodes[i];
+					if (!node || typeof node !== "object") {
+						continue;
+					}
+					if (Array.isArray(node["@graph"])) {
+						nodes.push(...node["@graph"]);
+					}
+					for (let key of ["abstract", "description"]) {
+						let value = node[key];
+						if (Array.isArray(value)) {
+							value = value.map(v => typeof v === "string" ? v : v && v.text)
+								.filter(Boolean).join(" ");
+						}
+						else if (value && typeof value === "object") {
+							value = value.text || value.value || "";
+						}
+						let abstract = this._normalizeAbstract(value);
+						if (abstract) {
+							return abstract;
+						}
+					}
+				}
+			}
+			catch (e) {
+				// Ignore malformed publisher JSON-LD.
+			}
+		}
+		return "";
+	},
+
+	abstractFromHTML(html) {
+		return this._metaAbstractFromHTML(html) || this._jsonLDAbstractFromHTML(html);
+	},
+
+	async enrichMissingAbstracts(articles) {
+		let missing = articles.filter(a => !a.abstract && (a.url || a.doi)).slice(0, 80);
+		for (let article of missing) {
+			let pages = await this.getVisualSourcePages(article, { includeUnpaywall: false });
+			for (let url of pages) {
+				try {
+					let page = await this.fetchArticleHTML(url);
+					let abstract = this.abstractFromHTML(page.text);
+					if (abstract) {
+						article.abstract = abstract;
+						article.abstractSource = "publisher";
+						break;
+					}
+				}
+				catch (e) {
+					Zotero.debug("JournalLens: abstract fallback failed for "
+						+ url + ": " + e);
+				}
 			}
 		}
 		return articles;
@@ -551,7 +691,7 @@ var JournalLens = {
 		}
 	},
 
-	async getVisualSourcePages(article) {
+	async getVisualSourcePages(article, options = {}) {
 		let urls = [];
 		if (article.url) {
 			urls.push(article.url);
@@ -563,10 +703,11 @@ var JournalLens = {
 			urls.push(url);
 		}
 
-		if (article.doi && article._unpaywall === undefined) {
+		let includeUnpaywall = options.includeUnpaywall !== false;
+		if (includeUnpaywall && article.doi && article._unpaywall === undefined) {
 			article._unpaywall = await this.fetchUnpaywall(article.doi);
 		}
-		let oa = article._unpaywall;
+		let oa = includeUnpaywall ? article._unpaywall : null;
 		if (oa) {
 			if (oa.best_oa_location) {
 				urls.push(oa.best_oa_location.url_for_landing_page);
@@ -661,6 +802,7 @@ var JournalLens = {
 
 		let articles = this.dedupeArticles(await this.fetchJournalFeed(issn, rows, days));
 		await this.enrichWithEuropePMC(articles);
+		await this.enrichMissingAbstracts(articles);
 		if (this.getPref("filterArticleTypes")) {
 			articles = this.filterArticleTypes(articles);
 		}
