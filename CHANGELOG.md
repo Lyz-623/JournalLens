@@ -8,6 +8,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.3] — 2026-06-13
+
+Figure and in-feed search patch.
+
+### Added / 新增
+- Added search within the currently loaded journal feed, matching article titles
+  and abstracts with highlighted hits. 增加当前期刊/文章流内的标题与摘要搜索和高亮。
+- Added a zoomable figure lightbox with mouse-wheel zoom, double-click zoom,
+  drag-to-pan, previous/next buttons and keyboard arrow navigation. 图片灯箱支持缩放、拖拽和左右切换。
+
+### Fixed / 修复
+- Removed the left-side article thumbnail placeholder. 移除文章卡片左侧的图片占位。
+- Deduplicated figures by image URL variants and caption text. 按图片地址与图注文本双重去重。
+- Normalized figure labels/captions so repeated output such as
+  `Fig. 1... — Fig. 1...` is shown only once. 修复 Figure caption 重复显示。
+
+---
+
 ## [0.3.2] — 2026-06-13
 
 UI, settings and visual-enrichment patch.
@@ -113,6 +131,7 @@ Initial release.
 - Bilingual (en-US / zh-CN) Fluent localisation, light/dark theme. 中英双语、深色模式。
 - Preferences pane, XPI build script, auto-update manifest. 偏好设置、打包脚本、自动更新清单。
 
+[0.3.3]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.3
 [0.3.2]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.2
 [0.3.1]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.0

@@ -1,8 +1,8 @@
 {
 	"manifest_version": 2,
 	"name": "JournalLens",
-	"version": "0.3.2",
-	"description": "Follow journals inside Zotero: browse past-month papers with abstracts, richer figure previews, EN/中文 UI switching, settings, and one-click import.",
+	"version": "0.3.3",
+	"description": "Follow journals inside Zotero: browse past-month papers, search title/abstract, view deduplicated figures with zoomable lightbox, and import by DOI.",
 	"author": "yunze",
 	"homepage_url": "https://github.com/Lyz-623/JournalLens",
 	"icons": {

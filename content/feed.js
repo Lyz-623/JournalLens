@@ -9,7 +9,14 @@ var State = {
 	journals: [],
 	activeISSN: null, // null = all journals
 	articles: [],
-	figureObserver: null
+	figureObserver: null,
+	articleQuery: "",
+	lightboxFigures: [],
+	lightboxIndex: 0,
+	lightboxZoom: 1,
+	lightboxPanX: 0,
+	lightboxPanY: 0,
+	lightboxDrag: null
 };
 
 function S(id) {
@@ -28,6 +35,7 @@ function applyStaticLabels() {
 	document.getElementById("h-followed").textContent = S("followed");
 	document.getElementById("h-add").textContent = S("add-journal");
 	document.getElementById("journal-search-input").placeholder = S("search-ph");
+	document.getElementById("article-search-input").placeholder = S("article-search-ph");
 	document.getElementById("lang-option-auto").textContent = S("lang-auto");
 	document.getElementById("lang-option-en").textContent = S("lang-en");
 	document.getElementById("lang-option-zh").textContent = S("lang-zh");
@@ -244,14 +252,69 @@ async function loadFeed(force = false) {
 	renderArticles(articles);
 }
 
-function journalInitials(name) {
-	let words = (name || "?").split(/\s+/).filter(Boolean);
-	return words.slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
+function initArticleSearch() {
+	let input = document.getElementById("article-search-input");
+	input.addEventListener("input", () => {
+		State.articleQuery = input.value.trim();
+		renderArticles(State.articles);
+	});
+}
+
+function articleMatchesSearch(article) {
+	if (!State.articleQuery) {
+		return true;
+	}
+	let query = State.articleQuery.toLowerCase();
+	let haystack = [
+		article.title,
+		article.abstract,
+		article._tx && article._tx.zh && article._tx.zh.title,
+		article._tx && article._tx.zh && article._tx.zh.abstract,
+		article._tx && article._tx.en && article._tx.en.title,
+		article._tx && article._tx.en && article._tx.en.abstract
+	].filter(Boolean).join("\n").toLowerCase();
+	return haystack.includes(query);
+}
+
+function escapeRegExp(text) {
+	return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function setHighlightedText(el, text) {
+	el.replaceChildren();
+	let query = State.articleQuery;
+	if (!query) {
+		el.textContent = text || "";
+		return;
+	}
+	let re = new RegExp("(" + escapeRegExp(query) + ")", "ig");
+	let parts = String(text || "").split(re);
+	for (let part of parts) {
+		if (!part) {
+			continue;
+		}
+		if (part.toLowerCase() === query.toLowerCase()) {
+			let mark = document.createElement("mark");
+			mark.className = "article-match";
+			mark.textContent = part;
+			el.appendChild(mark);
+		}
+		else {
+			el.appendChild(document.createTextNode(part));
+		}
+	}
+}
+
+function updateArticleSearchCount(total, shown) {
+	let count = document.getElementById("article-search-count");
+	count.textContent = State.articleQuery ? shown + " / " + total : "";
 }
 
 function renderArticles(articles) {
 	let cards = document.getElementById("cards");
 	cards.replaceChildren();
+	let visibleArticles = (articles || []).filter(articleMatchesSearch);
+	updateArticleSearchCount((articles || []).length, visibleArticles.length);
 
 	if (!articles || !articles.length) {
 		let empty = document.createElement("div");
@@ -260,10 +323,17 @@ function renderArticles(articles) {
 		cards.appendChild(empty);
 		return;
 	}
+	if (!visibleArticles.length) {
+		let empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = S("no-matches");
+		cards.appendChild(empty);
+		return;
+	}
 
 	resetFigureObserver();
 	let cardsToPrime = [];
-	for (let article of articles) {
+	for (let article of visibleArticles) {
 		let card = buildCard(article);
 		cards.appendChild(card);
 		if (card._figuresEl && cardsToPrime.length < 6) {
@@ -280,12 +350,6 @@ function renderArticles(articles) {
 function buildCard(article) {
 	let card = document.createElement("div");
 	card.className = "card";
-
-	// thumbnail (journal initials until a TOC / first figure loads)
-	let thumb = document.createElement("div");
-	thumb.className = "thumb";
-	thumb.textContent = journalInitials(article.journal);
-	card.appendChild(thumb);
 
 	let body = document.createElement("div");
 	body.className = "card-body";
@@ -350,7 +414,6 @@ function buildCard(article) {
 		body.appendChild(figures);
 		card._article = article;
 		card._figuresEl = figures;
-		card._thumbEl = thumb;
 		State.figureObserver.observe(card);
 	}
 
@@ -407,9 +470,9 @@ function updateArticleText(article, titleEl, absEl, btn) {
 	let target = article._translationTarget;
 	let translated = article._showTranslated && target
 		&& article._tx && article._tx[target];
-	titleEl.textContent = translated ? translated.title : article.title;
+	setHighlightedText(titleEl, translated ? translated.title : article.title);
 	if (absEl) {
-		absEl.textContent = translated ? translated.abstract : article.abstract;
+		setHighlightedText(absEl, translated ? translated.abstract : article.abstract);
 	}
 	btn.textContent = translationButtonLabel(article);
 }
@@ -526,6 +589,118 @@ function cleanText(text) {
 	return (text || "").replace(/\s+/g, " ").trim();
 }
 
+function normalizeFigureText(text) {
+	return cleanText(text)
+		.toLowerCase()
+		.replace(/[.:;,\-–—_()[\]{}'"“”‘’]/g, "")
+		.replace(/\s+/g, " ");
+}
+
+function splitFigureLabel(text) {
+	let value = cleanText(text);
+	let match = value.match(/^((?:fig(?:ure)?\.?\s*)?\d+[a-z]?|fig(?:ure)?\.?\s*\d+[a-z]?)(?:\s*[:.\-–—]\s+)(.+)$/i);
+	if (match && match[2] && match[2].length > 10) {
+		return { label: cleanText(match[1]).replace(/^figure/i, "Fig."), caption: cleanText(match[2]) };
+	}
+	return { label: value, caption: "" };
+}
+
+function stripCaptionLabel(label, caption) {
+	let l = cleanText(label);
+	let c = cleanText(caption);
+	if (!l || !c) {
+		return c;
+	}
+	if (normalizeFigureText(l) === normalizeFigureText(c)) {
+		return "";
+	}
+	let escaped = escapeRegExp(l).replace(/\\\./g, "\\.?");
+	let re = new RegExp("^\\s*" + escaped + "\\s*[:.\\-–—]?\\s*", "i");
+	return cleanText(c.replace(re, ""));
+}
+
+function cleanFigure(figure) {
+	if (!figure) {
+		return null;
+	}
+	let urls = JournalLens._uniqueURLs((figure.urls || []).filter(isUsefulImageURL));
+	if (!urls.length) {
+		return null;
+	}
+	let label = cleanText(figure.label);
+	let caption = cleanText(figure.caption);
+	let split = splitFigureLabel(label);
+	if (split.caption && !caption) {
+		label = split.label;
+		caption = split.caption;
+	}
+	else if (split.caption && normalizeFigureText(split.caption) === normalizeFigureText(caption)) {
+		label = split.label;
+	}
+	caption = stripCaptionLabel(label, caption);
+	return { label, caption, urls };
+}
+
+function figureCaptionText(figure) {
+	let clean = cleanFigure(figure);
+	if (!clean) {
+		return "";
+	}
+	if (clean.label && clean.caption) {
+		return clean.label + ": " + clean.caption;
+	}
+	return clean.caption || clean.label || "";
+}
+
+function figureURLKey(url) {
+	try {
+		let u = new URL(url);
+		u.hash = "";
+		u.search = "";
+		return (u.hostname + u.pathname).toLowerCase()
+			.replace(/\.(jpg|jpeg|png|gif|webp|tif|tiff)$/i, "")
+			.replace(/[-_](small|medium|large|full|hires|highres|zoom|thumbnail|thumb)$/i, "");
+	}
+	catch (e) {
+		return String(url || "").split(/[?#]/)[0].toLowerCase();
+	}
+}
+
+function figureTextKey(figure) {
+	let clean = cleanFigure(figure);
+	if (!clean) {
+		return "";
+	}
+	return normalizeFigureText([clean.label, clean.caption].filter(Boolean).join(" "));
+}
+
+function createFigureSeen(seedFigures = []) {
+	let seen = { urls: new Set(), captions: new Set() };
+	for (let figure of seedFigures) {
+		let clean = cleanFigure(figure);
+		if (!clean) {
+			continue;
+		}
+		for (let url of clean.urls) {
+			seen.urls.add(figureURLKey(url));
+		}
+		let textKey = figureTextKey(clean);
+		if (textKey && textKey.length > 12) {
+			seen.captions.add(textKey);
+		}
+	}
+	return seen;
+}
+
+function dedupeFigures(figures) {
+	let out = [];
+	let seen = createFigureSeen();
+	for (let figure of figures || []) {
+		addFigure(out, seen, figure);
+	}
+	return out;
+}
+
 function imageFromSrcset(srcset) {
 	if (!srcset) {
 		return "";
@@ -594,20 +769,33 @@ function isUsefulImageURL(url) {
 }
 
 function figureFromURL(url, label, caption) {
-	return {
+	return cleanFigure({
 		label: cleanText(label),
 		caption: cleanText(caption),
 		urls: [url]
-	};
+	});
 }
 
 function addFigure(list, seen, figure) {
-	let url = figure && figure.urls && figure.urls[0];
-	if (!isUsefulImageURL(url) || seen.has(url)) {
+	let clean = cleanFigure(figure);
+	if (!clean) {
 		return;
 	}
-	seen.add(url);
-	list.push(figure);
+	let urlKeys = clean.urls.map(figureURLKey).filter(Boolean);
+	if (urlKeys.some(key => seen.urls.has(key))) {
+		return;
+	}
+	let textKey = figureTextKey(clean);
+	if (textKey && textKey.length > 12 && seen.captions.has(textKey)) {
+		return;
+	}
+	for (let key of urlKeys) {
+		seen.urls.add(key);
+	}
+	if (textKey && textKey.length > 12) {
+		seen.captions.add(textKey);
+	}
+	list.push(clean);
 }
 
 function parseJSONLDImages(doc, baseURL, seen) {
@@ -709,7 +897,7 @@ function figureFromContainer(container, baseURL) {
 
 function parseHTMLVisuals(htmlText, baseURL) {
 	let doc = new DOMParser().parseFromString(htmlText, "text/html");
-	let seen = new Set();
+	let seen = createFigureSeen();
 	let figures = [];
 	let graphicalAbstract = null;
 
@@ -726,7 +914,7 @@ function parseHTMLVisuals(htmlText, baseURL) {
 		let url = metaOrLinkURL(doc.querySelector(selector), baseURL);
 		if (isUsefulImageURL(url)) {
 			graphicalAbstract = figureFromURL(url, "Preview", "Publisher page preview image");
-			seen.add(url);
+			addFigure([], seen, graphicalAbstract);
 			break;
 		}
 	}
@@ -819,7 +1007,7 @@ function parseXMLVisuals(xmlText, baseURL) {
 async function fetchPublisherVisuals(article) {
 	let graphicalAbstract = null;
 	let figures = [];
-	let seen = new Set();
+	let seen = createFigureSeen();
 	let pages = await JournalLens.getVisualSourcePages(article);
 	for (let url of pages) {
 		try {
@@ -832,8 +1020,12 @@ async function fetchPublisherVisuals(article) {
 				parsed = parseHTMLVisuals(page.text, baseURL);
 			}
 			if (!graphicalAbstract && parsed.graphicalAbstract) {
-				graphicalAbstract = parsed.graphicalAbstract;
-				seen.add(graphicalAbstract.urls[0]);
+				graphicalAbstract = cleanFigure(parsed.graphicalAbstract);
+				if (graphicalAbstract) {
+					for (let url of graphicalAbstract.urls) {
+						seen.urls.add(figureURLKey(url));
+					}
+				}
 			}
 			for (let figure of parsed.figures || []) {
 				addFigure(figures, seen, figure);
@@ -881,13 +1073,19 @@ async function loadFiguresForCard(card) {
 			if (!graphicalAbstract || !allFigures.length) {
 				let fallback = await fetchPublisherVisuals(article);
 				graphicalAbstract = graphicalAbstract || fallback.graphicalAbstract;
-				let seen = new Set(allFigures.map(f => f.urls && f.urls[0]).filter(Boolean));
+				let seen = createFigureSeen(allFigures);
 				for (let figure of fallback.figures || []) {
 					addFigure(allFigures, seen, figure);
 				}
 			}
-			article.figures = allFigures;
-			article.graphicalAbstract = graphicalAbstract;
+			let combined = [];
+			let seen = createFigureSeen();
+			addFigure(combined, seen, graphicalAbstract);
+			for (let figure of allFigures) {
+				addFigure(combined, seen, figure);
+			}
+			article.figures = combined;
+			article.graphicalAbstract = cleanFigure(graphicalAbstract);
 		}
 	}
 	catch (e) {
@@ -897,23 +1095,13 @@ async function loadFiguresForCard(card) {
 
 	container.replaceChildren();
 
-	// Thumbnail: prefer the TOC / graphical abstract, else Figure 1
-	let thumbFigure = article.graphicalAbstract
-		|| (article.figures && article.figures[0]);
-	if (thumbFigure) {
-		setImageWithFallback(card._thumbEl, thumbFigure, true);
-	}
-
-	if (thumbFigure && (!article.figures || !article.figures.length)) {
-		article.figures = [thumbFigure];
-	}
-
+	article.figures = dedupeFigures(article.figures);
 	if (!article.figures || !article.figures.length) {
 		container.hidden = true;
 		return;
 	}
 
-	for (let figure of article.figures.slice(0, 6)) {
+	for (let [index, figure] of article.figures.slice(0, 8).entries()) {
 		let item = document.createElement("div");
 		item.className = "figure-item";
 		setImageWithFallback(item, figure, false);
@@ -922,12 +1110,12 @@ async function loadFiguresForCard(card) {
 		label.textContent = figure.label || "";
 		label.title = figure.caption;
 		item.appendChild(label);
-		item.addEventListener("click", () => openLightbox(figure));
+		item.addEventListener("click", () => openLightbox(article.figures, index));
 		container.appendChild(item);
 	}
 }
 
-function setImageWithFallback(parent, figure, isThumb) {
+function setImageWithFallback(parent, figure) {
 	let img = document.createElement("img");
 	img.loading = "lazy";
 	img.alt = figure.label || "";
@@ -942,27 +1130,46 @@ function setImageWithFallback(parent, figure, isThumb) {
 		}
 	});
 	img.src = figure.urls[0];
-	if (isThumb) {
-		img.addEventListener("load", () => {
-			parent.textContent = "";
-			parent.appendChild(img);
-			parent.onclick = () => openLightbox(figure);
-		}, { once: true });
-	}
-	else {
-		parent.appendChild(img);
-	}
+	parent.appendChild(img);
 }
 
 /* ---------------------------------------------------------- *
  * Lightbox
  * ---------------------------------------------------------- */
 
-function openLightbox(figure) {
-	let lightbox = document.getElementById("lightbox");
+function updateLightboxTransform() {
+	let img = document.getElementById("lightbox-img");
+	let zoom = State.lightboxZoom;
+	img.style.transform = "translate(" + State.lightboxPanX + "px, "
+		+ State.lightboxPanY + "px) scale(" + zoom + ")";
+	img.classList.toggle("zoomed", zoom > 1.01);
+	document.getElementById("lightbox-zoom-reset").textContent =
+		Math.round(zoom * 100) + "%";
+}
+
+function setLightboxZoom(zoom) {
+	State.lightboxZoom = Math.max(0.25, Math.min(6, zoom));
+	if (State.lightboxZoom <= 1.01) {
+		State.lightboxPanX = 0;
+		State.lightboxPanY = 0;
+	}
+	updateLightboxTransform();
+}
+
+function resetLightboxView() {
+	State.lightboxZoom = 1;
+	State.lightboxPanX = 0;
+	State.lightboxPanY = 0;
+	updateLightboxTransform();
+}
+
+function renderLightboxFigure() {
 	let img = document.getElementById("lightbox-img");
 	let caption = document.getElementById("lightbox-caption");
-	img.src = figure.urls[0];
+	let figure = State.lightboxFigures[State.lightboxIndex];
+	if (!figure) {
+		return;
+	}
 	let index = 0;
 	img.onerror = () => {
 		index++;
@@ -970,14 +1177,89 @@ function openLightbox(figure) {
 			img.src = figure.urls[index];
 		}
 	};
-	caption.textContent = [figure.label, figure.caption].filter(Boolean).join(" — ");
+	img.src = figure.urls[0];
+	caption.textContent = figureCaptionText(figure);
+	resetLightboxView();
+	document.getElementById("lightbox-prev").disabled = State.lightboxFigures.length < 2;
+	document.getElementById("lightbox-next").disabled = State.lightboxFigures.length < 2;
+	document.getElementById("lightbox-nav-prev").hidden = State.lightboxFigures.length < 2;
+	document.getElementById("lightbox-nav-next").hidden = State.lightboxFigures.length < 2;
+}
+
+function openLightbox(figures, index = 0) {
+	State.lightboxFigures = dedupeFigures(Array.isArray(figures) ? figures : [figures]);
+	if (!State.lightboxFigures.length) {
+		return;
+	}
+	State.lightboxIndex = Math.max(0, Math.min(index, State.lightboxFigures.length - 1));
+	let lightbox = document.getElementById("lightbox");
+	renderLightboxFigure();
 	lightbox.hidden = false;
+}
+
+function stepLightbox(delta) {
+	if (State.lightboxFigures.length < 2) {
+		return;
+	}
+	State.lightboxIndex = (State.lightboxIndex + delta + State.lightboxFigures.length)
+		% State.lightboxFigures.length;
+	renderLightboxFigure();
 }
 
 function initLightbox() {
 	let lightbox = document.getElementById("lightbox");
+	let stage = document.getElementById("lightbox-stage");
+	let img = document.getElementById("lightbox-img");
 	document.getElementById("lightbox-close")
 		.addEventListener("click", () => { lightbox.hidden = true; });
+	document.getElementById("lightbox-prev").addEventListener("click", () => stepLightbox(-1));
+	document.getElementById("lightbox-next").addEventListener("click", () => stepLightbox(1));
+	document.getElementById("lightbox-nav-prev").addEventListener("click", (event) => {
+		event.stopPropagation();
+		stepLightbox(-1);
+	});
+	document.getElementById("lightbox-nav-next").addEventListener("click", (event) => {
+		event.stopPropagation();
+		stepLightbox(1);
+	});
+	document.getElementById("lightbox-zoom-in")
+		.addEventListener("click", () => setLightboxZoom(State.lightboxZoom * 1.25));
+	document.getElementById("lightbox-zoom-out")
+		.addEventListener("click", () => setLightboxZoom(State.lightboxZoom / 1.25));
+	document.getElementById("lightbox-zoom-reset")
+		.addEventListener("click", resetLightboxView);
+	stage.addEventListener("wheel", (event) => {
+		event.preventDefault();
+		setLightboxZoom(State.lightboxZoom * (event.deltaY < 0 ? 1.12 : 0.88));
+	});
+	img.addEventListener("dblclick", () => {
+		setLightboxZoom(State.lightboxZoom > 1.01 ? 1 : 2);
+	});
+	img.addEventListener("mousedown", (event) => {
+		if (State.lightboxZoom <= 1.01) {
+			return;
+		}
+		event.preventDefault();
+		State.lightboxDrag = {
+			x: event.clientX,
+			y: event.clientY,
+			panX: State.lightboxPanX,
+			panY: State.lightboxPanY
+		};
+		img.classList.add("dragging");
+	});
+	window.addEventListener("mousemove", (event) => {
+		if (!State.lightboxDrag) {
+			return;
+		}
+		State.lightboxPanX = State.lightboxDrag.panX + event.clientX - State.lightboxDrag.x;
+		State.lightboxPanY = State.lightboxDrag.panY + event.clientY - State.lightboxDrag.y;
+		updateLightboxTransform();
+	});
+	window.addEventListener("mouseup", () => {
+		State.lightboxDrag = null;
+		img.classList.remove("dragging");
+	});
 	lightbox.addEventListener("click", (event) => {
 		if (event.target === lightbox) {
 			lightbox.hidden = true;
@@ -987,6 +1269,26 @@ function initLightbox() {
 		if (event.key === "Escape") {
 			lightbox.hidden = true;
 			document.getElementById("donate-modal").hidden = true;
+		}
+		if (!lightbox.hidden && event.key === "ArrowLeft") {
+			event.preventDefault();
+			stepLightbox(-1);
+		}
+		if (!lightbox.hidden && event.key === "ArrowRight") {
+			event.preventDefault();
+			stepLightbox(1);
+		}
+		if (!lightbox.hidden && (event.key === "+" || event.key === "=")) {
+			event.preventDefault();
+			setLightboxZoom(State.lightboxZoom * 1.25);
+		}
+		if (!lightbox.hidden && event.key === "-") {
+			event.preventDefault();
+			setLightboxZoom(State.lightboxZoom / 1.25);
+		}
+		if (!lightbox.hidden && event.key === "0") {
+			event.preventDefault();
+			resetLightboxView();
 		}
 	});
 }
@@ -1026,6 +1328,7 @@ function init() {
 	document.getElementById("refresh-btn")
 		.addEventListener("click", () => loadFeed(true));
 	initSearch();
+	initArticleSearch();
 	initLightbox();
 	initDonate();
 	renderSidebar();

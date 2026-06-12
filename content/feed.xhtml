@@ -42,6 +42,10 @@
 		</aside>
 
 		<main id="content">
+			<div id="feed-tools">
+				<input id="article-search-input" type="search" placeholder="Search title or abstract…"/>
+				<span id="article-search-count"></span>
+			</div>
 			<div id="status" hidden="hidden"></div>
 			<div id="cards"></div>
 		</main>
@@ -50,8 +54,19 @@
 	<!-- Figure lightbox -->
 	<div id="lightbox" hidden="hidden">
 		<div id="lightbox-inner">
-			<button id="lightbox-close">✕</button>
-			<img id="lightbox-img" src="" alt=""/>
+			<div id="lightbox-toolbar">
+				<button id="lightbox-prev" type="button">‹</button>
+				<button id="lightbox-zoom-out" type="button">−</button>
+				<button id="lightbox-zoom-reset" type="button">100%</button>
+				<button id="lightbox-zoom-in" type="button">+</button>
+				<button id="lightbox-next" type="button">›</button>
+				<button id="lightbox-close" type="button">✕</button>
+			</div>
+			<div id="lightbox-stage">
+				<button id="lightbox-nav-prev" class="lightbox-nav" type="button">‹</button>
+				<img id="lightbox-img" src="" alt=""/>
+				<button id="lightbox-nav-next" class="lightbox-nav" type="button">›</button>
+			</div>
 			<div id="lightbox-caption"></div>
 		</div>
 	</div>
