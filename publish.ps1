@@ -24,14 +24,14 @@ if (-not (Test-Path $xpi)) {
 $hasRemote = git remote | Select-String -Quiet "origin"
 if (-not $hasRemote) {
     & $gh repo create JournalLens --public --source . --remote origin `
-        --description "Zotero plugin: follow journals and browse latest articles with abstracts, figures and captions"
+        --description "Zotero plugin: follow journals and browse recent articles with abstracts, figures and captions"
 }
 
 git push -u origin main
 
 # Create the release with the XPI attached
 & $gh release create $tag $xpi --title "JournalLens $version" --notes @"
-JournalLens $version — follow journals inside Zotero.
+JournalLens $version — follow journals inside Zotero and browse papers from the past month.
 
 **Install:** download ``journallens-$version.xpi`` below, then in Zotero: Tools -> Plugins -> gear icon -> Install Plugin From File.
 

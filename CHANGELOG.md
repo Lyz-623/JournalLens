@@ -8,6 +8,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.0] — 2026-06-13
+
+Recent-feed update.
+
+### Added / 新增
+- **Past-month feed** — each followed journal now fetches papers published in
+  the last 30 days by default, using Crossref publication-date filters. 默认抓取每本期刊近 30 天发表的论文。
+- **Refreshed payment QR images** — PayPal, WeChat Pay and Alipay images are
+  bundled from the local JPG files supplied for this release. 更新内置打赏二维码。
+
+### Changed / 变更
+- Default per-journal fetch cap increased from 50 to 200 so high-output journals
+  return a fuller month of papers. 每刊默认抓取上限从 50 提高到 200。
+- Preferences now expose "Days to fetch" instead of "Issues to fetch". 设置项改为按天数抓取。
+- README and visual documentation now describe the past-month workflow. 更新 README 图文说明。
+
+---
+
 ## [0.2.0] — 2026-06-13
 
 Major feature release.
@@ -51,5 +69,6 @@ Initial release.
 - Bilingual (en-US / zh-CN) Fluent localisation, light/dark theme. 中英双语、深色模式。
 - Preferences pane, XPI build script, auto-update manifest. 偏好设置、打包脚本、自动更新清单。
 
-[0.2.0]: https://github.com/yunze623/JournalLens/releases/tag/v0.2.0
-[0.1.0]: https://github.com/yunze623/JournalLens/releases/tag/v0.1.0
+[0.3.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.0
+[0.2.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.2.0
+[0.1.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.1.0

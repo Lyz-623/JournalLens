@@ -4,14 +4,14 @@
 
 # JournalLens
 
-**Follow your favourite journals inside Zotero — browse the latest issues with abstracts, real paper figures and captions, translate titles & abstracts between English and 中文, and add papers to your library in one click.**
+**Follow your favourite journals inside Zotero — browse papers from the past month with abstracts, real paper figures and captions, translate titles & abstracts between English and 中文, and add papers to your library in one click.**
 
-在 Zotero 中关注你喜爱的期刊 — 浏览最新一期的论文摘要、正文图片与图注,中英文一键互译,并一键加入文献库。
+在 Zotero 中关注你喜爱的期刊 — 浏览近一个月发表的论文摘要、正文图片与图注,中英文一键互译,并一键加入文献库。
 
 [![Zotero](https://img.shields.io/badge/Zotero-7%20%7C%208%20%7C%209-blue)](https://www.zotero.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/yunze623/JournalLens?include_prereleases)](https://github.com/yunze623/JournalLens/releases)
-[![Stars](https://img.shields.io/github/stars/yunze623/JournalLens?style=social)](https://github.com/yunze623/JournalLens)
+[![Release](https://img.shields.io/github/v/release/Lyz-623/JournalLens?include_prereleases)](https://github.com/Lyz-623/JournalLens/releases)
+[![Stars](https://img.shields.io/github/stars/Lyz-623/JournalLens?style=social)](https://github.com/Lyz-623/JournalLens)
 
 [English](#-overview) · [中文](#-简介) · [Features](#-features) · [Install](#-installation) · [Usage](#-usage) · [Changelog](#-changelog--版本记录) · [Donate](#️-support--打赏)
 
@@ -24,7 +24,7 @@
 Keeping up with new papers means opening a dozen journal websites, squinting at title-only lists, and copy-pasting DOIs into Zotero. **JournalLens** brings that whole workflow *inside* Zotero:
 
 - You pick the journals you care about.
-- It pulls their **latest issues** and shows each paper as a rich card — not just a title, but the **abstract**, a **thumbnail from the paper itself**, and a strip of the **main figures with captions** so you can tell at a glance what the work is about.
+- It pulls papers published in the **past 30 days** and shows each one as a rich card — not just a title, but the **abstract**, a **thumbnail from the paper itself**, and a strip of the **main figures with captions** so you can tell at a glance what the work is about.
 - Don't read English comfortably? **Translate the title and abstract to 中文** (or back) with one click.
 - Found something relevant? **Add it to your Zotero library** with full metadata in one click.
 
@@ -40,7 +40,7 @@ Keeping up with new papers means opening a dozen journal websites, squinting at 
 追新文献往往要打开十几个期刊网站,盯着只有标题的列表,再把 DOI 一个个复制进 Zotero。**JournalLens** 把整个流程搬进了 Zotero:
 
 - 你选择关心的期刊;
-- 它抓取这些期刊的**最新几期**,并把每篇论文做成信息丰富的卡片 —— 不只是标题,还有**摘要**、**来自论文本身的缩略图**,以及一排带图注的**正文主图**,让你一眼看出这篇做了什么;
+- 它抓取这些期刊**近一个月发表的论文**,并把每篇论文做成信息丰富的卡片 —— 不只是标题,还有**摘要**、**来自论文本身的缩略图**,以及一排带图注的**正文主图**,让你一眼看出这篇做了什么;
 - 英文读着累?**一键把标题和摘要翻成中文**(或翻回英文);
 - 看到相关的?**一键连同完整元数据加入 Zotero 文献库**。
 
@@ -55,7 +55,7 @@ Keeping up with new papers means opening a dozen journal websites, squinting at 
 | | Feature | Details |
 |---|---|---|
 | 📡 | **Follow journals** | Search by journal name or ISSN. Powered by Crossref — virtually every academic journal, any discipline. |
-| 🗞️ | **Latest-issues feed** | Shows the **2 most recent issues** per journal (configurable). Merged across journals and sorted by date. |
+| 🗞️ | **Past-month feed** | Shows papers published in the **past 30 days** per journal (configurable). Merged across journals and sorted by date. |
 | 🔬 | **Research only** | Hides news, editorials, comments, perspectives, corrections & errata. Keeps articles, reviews, letters, correspondence, protocols. |
 | 📄 | **Full abstracts** | Expandable abstract on every card (Crossref + Europe PMC). |
 | 🖼️ | **Smart thumbnails** | Prefers the paper's **graphical abstract / TOC** image, falling back to **Figure 1**. |
@@ -71,7 +71,7 @@ Keeping up with new papers means opening a dozen journal websites, squinting at 
 ### 功能一览(中文)
 
 - **关注期刊** — 按期刊名或 ISSN 搜索(基于 Crossref,覆盖几乎所有学科)。
-- **最新期数速览** — 只显示各期刊**最新 2 期**(可调),跨期刊聚合并按日期排序。
+- **近一个月速览** — 默认显示各期刊**近 30 天**发表的论文(可调),跨期刊聚合并按日期排序。
 - **只看研究内容** — 自动隐藏新闻稿、社论、评论、Perspective、更正等,保留 Article / Review / Letter / Correspondence / Protocol。
 - **完整摘要** — 每张卡片可展开阅读摘要。
 - **智能缩略图** — 优先使用论文的**图文摘要 / TOC** 图,没有则用 **Figure 1**。
@@ -84,7 +84,7 @@ Keeping up with new papers means opening a dozen journal websites, squinting at 
 
 ## 📦 Installation
 
-1. Download the latest `journallens-x.x.x.xpi` from the [**Releases**](https://github.com/yunze623/JournalLens/releases) page.
+1. Download the latest `journallens-x.x.x.xpi` from the [**Releases**](https://github.com/Lyz-623/JournalLens/releases) page.
 2. In Zotero, open **Tools → Plugins** (工具 → 插件).
 3. Click the gear icon ⚙ → **Install Plugin From File…** and choose the downloaded `.xpi`.
 
@@ -124,8 +124,8 @@ Open **Zotero Settings → JournalLens** (Zotero 设置 → JournalLens):
 | Setting | Default | Description |
 |---|---|---|
 | Interface language / 界面语言 | Follow Zotero | UI language: auto / English / 中文 |
-| Issues to fetch / 抓取期数 | 2 | How many recent issues to keep per journal |
-| Max articles per journal / 每刊最多文章数 | 50 | Upper bound fetched before filtering |
+| Days to fetch / 抓取最近天数 | 30 | Publication-date window per journal |
+| Max articles per journal / 每刊最多文章数 | 200 | Upper bound fetched before filtering |
 | Cache duration / 缓存时长 | 60 min | How long feeds are cached |
 | Translation service / 翻译服务 | Google | `Google` or `MyMemory` (use MyMemory if Google is blocked) |
 | Only research content / 仅研究内容 | on | Filter out news/editorials/perspectives… |
@@ -137,7 +137,7 @@ Open **Zotero Settings → JournalLens** (Zotero 设置 → JournalLens):
 
 | Data | Source |
 |------|--------|
-| Latest articles per journal | [Crossref REST API](https://api.crossref.org) (all disciplines) |
+| Recent articles per journal | [Crossref REST API](https://api.crossref.org) (all disciplines, filtered by publication date) |
 | Abstracts, publication type & Open-Access status | [Europe PMC REST API](https://europepmc.org/RestfulWebService) |
 | Graphical-abstract / figures & captions | Europe PMC open-access full text (JATS XML) |
 | Title / abstract translation | Google translate (keyless) with a MyMemory fallback |
@@ -151,7 +151,7 @@ Open **Zotero Settings → JournalLens** (Zotero 设置 → JournalLens):
 ## 🛠 Build from source / 开发构建
 
 ```bash
-git clone https://github.com/yunze623/JournalLens.git
+git clone https://github.com/Lyz-623/JournalLens.git
 cd JournalLens
 
 # Build the .xpi  →  build/journallens-<version>.xpi
@@ -189,6 +189,9 @@ updates.json           Auto-update manifest
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
+### v0.3.0 — 2026-06-13
+Past-month feed by publication date · default per-journal fetch cap increased to 200 · payment QR images refreshed from local JPG files · README and visual docs updated.
+
 ### v0.2.0 — 2026-06-13
 EN ⇄ 中文 translation · full bilingual UI · research-content filtering · latest-issues mode · graphical-abstract/TOC thumbnails · in-app donation panel · toolbar quick-open button.
 
@@ -207,17 +210,17 @@ JournalLens **永久免费开源**。如果它帮你节省了时间,欢迎打赏
 
 | PayPal | 微信支付 WeChat Pay | 支付宝 Alipay |
 |:---:|:---:|:---:|
-| <img src="content/donate/paypal.png" width="190" alt="PayPal"/> | <img src="content/donate/wechat.png" width="190" alt="WeChat Pay"/> | <img src="content/donate/alipay.png" width="190" alt="Alipay"/> |
+| <img src="content/donate/paypal.jpg" width="190" alt="PayPal"/> | <img src="content/donate/wechat.jpg" width="190" alt="WeChat Pay"/> | <img src="content/donate/alipay.jpg" width="190" alt="Alipay"/> |
 
 </div>
 
-Other ways to help / 其他支持方式: ⭐ **Star** the repo · 🐛 report bugs or ideas in [Issues](https://github.com/yunze623/JournalLens/issues) · 📢 share it with colleagues.
+Other ways to help / 其他支持方式: ⭐ **Star** the repo · 🐛 report bugs or ideas in [Issues](https://github.com/Lyz-623/JournalLens/issues) · 📢 share it with colleagues.
 
 ---
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome! If you hit a journal that doesn't work well, please open an [issue](https://github.com/yunze623/JournalLens/issues) with the journal name / ISSN.
+Issues and pull requests are welcome! If you hit a journal that doesn't work well, please open an [issue](https://github.com/Lyz-623/JournalLens/issues) with the journal name / ISSN.
 
 ## 📄 License
 

@@ -18,14 +18,14 @@
 		</hbox>
 
 		<hbox align="center" style="margin-top: 6px;">
-			<label data-l10n-id="journallens-prefs-issues" value="Issues to fetch (most recent):"/>
-			<html:input type="number" min="1" max="6" style="width: 70px; margin-inline-start: 6px;"
-				preference="extensions.journallens.issuesToFetch"/>
+			<label data-l10n-id="journallens-prefs-days" value="Days to fetch:"/>
+			<html:input type="number" min="7" max="180" style="width: 70px; margin-inline-start: 6px;"
+				preference="extensions.journallens.daysToFetch"/>
 		</hbox>
 
 		<hbox align="center" style="margin-top: 6px;">
 			<label data-l10n-id="journallens-prefs-articles" value="Max articles fetched per journal:"/>
-			<html:input type="number" min="10" max="200" style="width: 70px; margin-inline-start: 6px;"
+			<html:input type="number" min="10" max="500" style="width: 70px; margin-inline-start: 6px;"
 				preference="extensions.journallens.articlesPerJournal"/>
 		</hbox>
 
@@ -56,9 +56,9 @@
 		<separator/>
 		<hbox>
 			<button data-l10n-id="journallens-prefs-homepage" label="GitHub"
-				oncommand="Zotero.launchURL('https://github.com/yunze623/JournalLens')"/>
+				oncommand="Zotero.launchURL('https://github.com/Lyz-623/JournalLens')"/>
 			<button data-l10n-id="journallens-prefs-donate" label="♥ Donate"
-				oncommand="Zotero.launchURL('https://github.com/yunze623/JournalLens/blob/main/DONATE.md')"/>
+				oncommand="Zotero.launchURL('https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md')"/>
 		</hbox>
 	</groupbox>
 </vbox>

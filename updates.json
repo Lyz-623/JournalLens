@@ -3,8 +3,8 @@
 		"journallens@yunze623.github.io": {
 			"updates": [
 				{
-					"version": "0.2.0",
-					"update_link": "https://github.com/yunze623/JournalLens/releases/download/v0.2.0/journallens-0.2.0.xpi",
+					"version": "0.3.0",
+					"update_link": "https://github.com/Lyz-623/JournalLens/releases/download/v0.3.0/journallens-0.3.0.xpi",
 					"applications": {
 						"zotero": {
 							"strict_min_version": "7.0",

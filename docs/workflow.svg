@@ -17,8 +17,8 @@
     <rect x="300" y="35" width="240" height="100" rx="12" fill="#ffffff" stroke="#dde1e6"/>
     <circle cx="332" cy="67" r="15" fill="#e6eefc"/>
     <text x="332" y="72" font-size="15" font-weight="700" fill="#2d6cdf" text-anchor="middle">2</text>
-    <text x="360" y="72" font-size="16" font-weight="700" fill="#1c1e21">Browse latest issues</text>
-    <text x="320" y="100" font-size="12.5" fill="#5c6470">2 most recent issues,</text>
+    <text x="360" y="72" font-size="16" font-weight="700" fill="#1c1e21">Browse past month</text>
+    <text x="320" y="100" font-size="12.5" fill="#5c6470">30-day publication window,</text>
     <text x="320" y="118" font-size="12.5" fill="#5c6470">research content only</text>
     <!-- step 3 -->
     <rect x="580" y="35" width="240" height="100" rx="12" fill="#ffffff" stroke="#dde1e6"/>

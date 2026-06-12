@@ -18,8 +18,8 @@ var JournalLens = {
 
 	PREF_BRANCH: "extensions.journallens.",
 	CROSSREF_MAILTO: "yunze623@gmail.com",
-	HOMEPAGE_URL: "https://github.com/yunze623/JournalLens",
-	DONATE_URL: "https://github.com/yunze623/JournalLens/blob/main/DONATE.md",
+	HOMEPAGE_URL: "https://github.com/Lyz-623/JournalLens",
+	DONATE_URL: "https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md",
 
 	_feedWindow: null,
 	_cache: new Map(),
@@ -30,7 +30,7 @@ var JournalLens = {
 	STRINGS: {
 		en: {
 			"menuitem": "JournalLens — Journal Feed",
-			"toolbar-tip": "JournalLens — browse the latest journal articles",
+			"toolbar-tip": "JournalLens — browse recent journal articles",
 			"refresh": "Refresh",
 			"donate": "♥ Donate",
 			"followed": "Followed journals",
@@ -39,7 +39,7 @@ var JournalLens = {
 			"all-journals": "All journals",
 			"searching": "Searching…",
 			"no-results": "No journals found",
-			"loading": "Loading latest articles…",
+			"loading": "Loading recent articles…",
 			"loading-failed": "Some journals could not be loaded. Check your network connection.",
 			"no-journals": "No journals followed yet — add one on the left.",
 			"no-articles": "No articles found.",
@@ -67,7 +67,7 @@ var JournalLens = {
 		},
 		zh: {
 			"menuitem": "JournalLens — 期刊速览",
-			"toolbar-tip": "JournalLens — 浏览期刊最新文章",
+			"toolbar-tip": "JournalLens — 浏览期刊近期文章",
 			"refresh": "刷新",
 			"donate": "♥ 打赏支持",
 			"followed": "关注的期刊",
@@ -76,7 +76,7 @@ var JournalLens = {
 			"all-journals": "全部期刊",
 			"searching": "搜索中…",
 			"no-results": "未找到相关期刊",
-			"loading": "正在加载最新文章…",
+			"loading": "正在加载近期文章…",
 			"loading-failed": "部分期刊加载失败,请检查网络连接。",
 			"no-journals": "还没有关注任何期刊,请在左侧添加。",
 			"no-articles": "未找到文章。",
@@ -298,7 +298,7 @@ var JournalLens = {
 	},
 
 	/* ---------------------------------------------------------- *
-	 * Crossref: journal search + latest works
+	 * Crossref: journal search + recent works
 	 * ---------------------------------------------------------- */
 
 	async searchJournals(query) {
@@ -362,10 +362,37 @@ var JournalLens = {
 		return dp[0].map(n => String(n).padStart(2, "0")).join("-");
 	},
 
-	async fetchJournalFeed(issn, rows) {
+	_dateDaysAgo(days) {
+		let d = new Date();
+		d.setDate(d.getDate() - days);
+		return [
+			d.getFullYear(),
+			String(d.getMonth() + 1).padStart(2, "0"),
+			String(d.getDate()).padStart(2, "0")
+		].join("-");
+	},
+
+	_articleDateValue(article) {
+		if (!article.date) {
+			return 0;
+		}
+		let parts = article.date.split("-");
+		let normalized = [
+			parts[0],
+			parts[1] || "01",
+			parts[2] || "01"
+		].join("-");
+		return Date.parse(normalized) || 0;
+	},
+
+	async fetchJournalFeed(issn, rows, days) {
+		let filters = ["type:journal-article"];
+		if (days && days > 0) {
+			filters.push("from-pub-date:" + this._dateDaysAgo(days));
+		}
 		let url = "https://api.crossref.org/journals/" + encodeURIComponent(issn)
 			+ "/works?sort=published&order=desc&rows=" + rows
-			+ "&filter=type:journal-article"
+			+ "&filter=" + encodeURIComponent(filters.join(","))
 			+ "&select=DOI,title,author,abstract,issued,published,published-online,published-print,container-title,volume,issue,page,URL"
 			+ "&mailto=" + this.CROSSREF_MAILTO;
 		let data = await this._getJSON(url);
@@ -457,30 +484,16 @@ var JournalLens = {
 	},
 
 	/**
-	 * Keep only the articles belonging to the N most recent issues.
-	 * Articles without a volume/issue (online-first) are grouped into a single
-	 * "online first" bucket, which — since the feed is date-sorted — naturally
-	 * sits at the top alongside the latest printed issue.
+	 * Keep articles published in the configured recent-day window. Crossref
+	 * already applies from-pub-date server-side; this client-side pass protects
+	 * against incomplete publisher metadata and cached older responses.
 	 */
-	filterRecentIssues(articles, issueCount) {
-		if (!issueCount || issueCount < 1) {
+	filterRecentDays(articles, days) {
+		if (!days || days < 1) {
 			return articles;
 		}
-		let order = [];
-		let keyFor = (a) => {
-			if (a.volume || a.issue) {
-				return "v" + (a.volume || "") + "i" + (a.issue || "");
-			}
-			return "__online__";
-		};
-		for (let a of articles) {
-			let k = keyFor(a);
-			if (!order.includes(k)) {
-				order.push(k);
-			}
-		}
-		let keep = new Set(order.slice(0, issueCount));
-		return articles.filter(a => keep.has(keyFor(a)));
+		let cutoff = Date.parse(this._dateDaysAgo(days));
+		return articles.filter(a => this._articleDateValue(a) >= cutoff);
 	},
 
 	/**
@@ -513,15 +526,15 @@ var JournalLens = {
 		if (!force && cached && (Date.now() - cached.time) < cacheMinutes * 60000) {
 			return cached.articles;
 		}
-		let rows = parseInt(this.getPref("articlesPerJournal")) || 50;
-		let issues = parseInt(this.getPref("issuesToFetch")) || 2;
+		let rows = parseInt(this.getPref("articlesPerJournal")) || 200;
+		let days = parseInt(this.getPref("daysToFetch")) || 30;
 
-		let articles = this.dedupeArticles(await this.fetchJournalFeed(issn, rows));
+		let articles = this.dedupeArticles(await this.fetchJournalFeed(issn, rows, days));
 		await this.enrichWithEuropePMC(articles);
 		if (this.getPref("filterArticleTypes")) {
 			articles = this.filterArticleTypes(articles);
 		}
-		articles = this.filterRecentIssues(articles, issues);
+		articles = this.filterRecentDays(articles, days);
 
 		this._cache.set(issn, { time: Date.now(), articles });
 		return articles;
