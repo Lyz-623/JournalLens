@@ -1,65 +1,139 @@
 <div align="center">
 
-<img src="icons/icon96.png" alt="JournalLens" width="80"/>
+<img src="docs/banner.svg" alt="JournalLens" width="100%"/>
 
 # JournalLens
 
-**Follow your favorite journals inside Zotero — see the latest articles with abstracts, real paper figures and captions, and add them to your library in one click.**
+**Follow your favourite journals inside Zotero — browse the latest issues with abstracts, real paper figures and captions, translate titles & abstracts between English and 中文, and add papers to your library in one click.**
 
-在 Zotero 中关注你喜爱的期刊 — 浏览最新文章的摘要、论文正文图片和图注,一键加入文献库。
+在 Zotero 中关注你喜爱的期刊 — 浏览最新一期的论文摘要、正文图片与图注,中英文一键互译,并一键加入文献库。
 
 [![Zotero](https://img.shields.io/badge/Zotero-7%20%7C%208%20%7C%209-blue)](https://www.zotero.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Latest release](https://img.shields.io/github/v/release/yunze623/JournalLens)](https://github.com/yunze623/JournalLens/releases)
+[![Release](https://img.shields.io/github/v/release/yunze623/JournalLens?include_prereleases)](https://github.com/yunze623/JournalLens/releases)
+[![Stars](https://img.shields.io/github/stars/yunze623/JournalLens?style=social)](https://github.com/yunze623/JournalLens)
 
-[English](#-features) | [中文](#-功能介绍)
+[English](#-overview) · [中文](#-简介) · [Features](#-features) · [Install](#-installation) · [Usage](#-usage) · [Changelog](#-changelog--版本记录) · [Donate](#️-support--打赏)
 
 </div>
 
 ---
 
+## 🔭 Overview
+
+Keeping up with new papers means opening a dozen journal websites, squinting at title-only lists, and copy-pasting DOIs into Zotero. **JournalLens** brings that whole workflow *inside* Zotero:
+
+- You pick the journals you care about.
+- It pulls their **latest issues** and shows each paper as a rich card — not just a title, but the **abstract**, a **thumbnail from the paper itself**, and a strip of the **main figures with captions** so you can tell at a glance what the work is about.
+- Don't read English comfortably? **Translate the title and abstract to 中文** (or back) with one click.
+- Found something relevant? **Add it to your Zotero library** with full metadata in one click.
+
+100% free, no account, no tracking.
+
+<div align="center">
+<img src="docs/window.svg" alt="JournalLens main window" width="92%"/>
+<br/><em>The JournalLens reading window — sidebar of followed journals, rich article cards, figure strip, and the EN ⇄ 中文 toggle (bottom card shown translated).</em>
+</div>
+
+## 🌟 简介
+
+追新文献往往要打开十几个期刊网站,盯着只有标题的列表,再把 DOI 一个个复制进 Zotero。**JournalLens** 把整个流程搬进了 Zotero:
+
+- 你选择关心的期刊;
+- 它抓取这些期刊的**最新几期**,并把每篇论文做成信息丰富的卡片 —— 不只是标题,还有**摘要**、**来自论文本身的缩略图**,以及一排带图注的**正文主图**,让你一眼看出这篇做了什么;
+- 英文读着累?**一键把标题和摘要翻成中文**(或翻回英文);
+- 看到相关的?**一键连同完整元数据加入 Zotero 文献库**。
+
+完全免费,无需账号,无任何跟踪。
+
+---
+
 ## ✨ Features
 
-- **Follow journals** — search by journal name or ISSN (powered by Crossref, covers virtually every academic journal in any discipline) and build your own watch list.
-- **Latest-issues feed** — a clean, card-based reading window inside Zotero showing the **most recent issues** of each journal (2 by default), merged and sorted by publication date.
-- **Research only** — automatically filters out news, editorials, perspectives, corrections and other non-research items, so you see actual articles, reviews, letters, correspondence and protocols.
-- **More than titles** — every card shows:
-  - 📄 the full **abstract** (expandable),
-  - 🖼️ a **thumbnail** from the actual paper — the graphical abstract / TOC image if available, otherwise Figure 1,
-  - 🔬 a strip of the paper's **main figures with their captions** — click any figure to view it full-size with the complete caption, so you can tell at a glance what the paper did (open-access articles indexed in Europe PMC).
-- **EN ⇄ 中文 translation** — translate any article's title and abstract between English and Chinese with one click.
-- **Full bilingual interface** — switch the whole UI between English and 中文 from the toolbar at any time.
-- **Quick open** — a 🔭 button in Zotero's main toolbar (next to the search box), plus the Tools menu entry.
-- **One-click import** — add any article to your Zotero library by DOI, with full metadata.
-- **Open Access badges** — instantly see which papers are freely readable.
-- **In-app donation** — PayPal / WeChat / Alipay QR codes built right into the window.
-- **Light & dark mode** — matches your system theme.
-- **Free forever** — no account, no tracking. If it saves you time, you can [buy me a coffee ♥](DONATE.md).
+<div align="center"><img src="docs/workflow.svg" alt="Workflow" width="96%"/></div>
+
+| | Feature | Details |
+|---|---|---|
+| 📡 | **Follow journals** | Search by journal name or ISSN. Powered by Crossref — virtually every academic journal, any discipline. |
+| 🗞️ | **Latest-issues feed** | Shows the **2 most recent issues** per journal (configurable). Merged across journals and sorted by date. |
+| 🔬 | **Research only** | Hides news, editorials, comments, perspectives, corrections & errata. Keeps articles, reviews, letters, correspondence, protocols. |
+| 📄 | **Full abstracts** | Expandable abstract on every card (Crossref + Europe PMC). |
+| 🖼️ | **Smart thumbnails** | Prefers the paper's **graphical abstract / TOC** image, falling back to **Figure 1**. |
+| 📊 | **Main figures + captions** | A scrollable strip of the paper's main figures; click any to view full-size with its complete caption. |
+| 🌐 | **EN ⇄ 中文 translation** | Translate any title & abstract with one click (Google, MyMemory fallback). |
+| 🪟 | **Bilingual interface** | Switch the whole UI between English and 中文 anytime, from the top bar. |
+| 🟢 | **Open-Access badges** | Instantly see which papers are freely readable. |
+| ➕ | **One-click import** | Add any paper to Zotero by DOI, with full metadata. |
+| 🔭 | **Quick open** | Toolbar button next to the search box, plus a Tools-menu entry. |
+| ❤️ | **In-app donation** | PayPal / WeChat / Alipay QR codes built into the window. |
+| 🌓 | **Light & dark mode** | Follows your system theme. |
+
+### 功能一览(中文)
+
+- **关注期刊** — 按期刊名或 ISSN 搜索(基于 Crossref,覆盖几乎所有学科)。
+- **最新期数速览** — 只显示各期刊**最新 2 期**(可调),跨期刊聚合并按日期排序。
+- **只看研究内容** — 自动隐藏新闻稿、社论、评论、Perspective、更正等,保留 Article / Review / Letter / Correspondence / Protocol。
+- **完整摘要** — 每张卡片可展开阅读摘要。
+- **智能缩略图** — 优先使用论文的**图文摘要 / TOC** 图,没有则用 **Figure 1**。
+- **正文主图 + 图注** — 可横向滚动的主图条,点击任意图片放大查看完整图注。
+- **中英互译** — 一键翻译标题与摘要(Google,自动回退 MyMemory)。
+- **双语界面** — 顶栏随时切换中文 / English。
+- **OA 标识、一键导入、工具栏快速打开、内置打赏、深色模式**。
+
+---
 
 ## 📦 Installation
 
-1. Download the latest `journallens-x.x.x.xpi` from the [Releases page](https://github.com/yunze623/JournalLens/releases).
-2. In Zotero, go to **Tools → Plugins**.
+1. Download the latest `journallens-x.x.x.xpi` from the [**Releases**](https://github.com/yunze623/JournalLens/releases) page.
+2. In Zotero, open **Tools → Plugins** (工具 → 插件).
 3. Click the gear icon ⚙ → **Install Plugin From File…** and choose the downloaded `.xpi`.
 
-> Requires Zotero 7 or later (tested on Zotero 9). Firefox users: right-click the download link and "Save Link As…" so the browser doesn't try to install the file itself.
+> Requires **Zotero 7 or later** (tested on Zotero 9).
+> In Firefox/Edge, right-click the download link and choose *Save Link As…* so the browser doesn't try to open the `.xpi` itself.
+> 需要 **Zotero 7 及以上**(已在 Zotero 9 测试)。在浏览器中请右键"链接另存为"下载 `.xpi`。
+
+---
 
 ## 🚀 Usage
 
-1. Open JournalLens via the **🔭 toolbar button** (next to the search box) or **Tools → JournalLens — Journal Feed**.
-2. In the left sidebar, type a journal name (e.g. *Nature Methods*) or an ISSN into the **Follow a journal** box and pick a result.
-3. Browse the feed:
+1. **Open JournalLens** via the 🔭 **toolbar button** (next to the search box) or **Tools → JournalLens — Journal Feed**.
+2. **Follow a journal**: in the left sidebar, type a journal name (e.g. *Nature Methods*) or an ISSN into *Follow a journal*, then click a result.
+3. **Browse the feed**:
    - Click a **title** or **Open page** to open the article on the publisher's site.
    - Click **Show more** to read the full abstract.
    - Click a **figure** to view it full-size with its caption.
-   - Click **EN / 中** to translate the title and abstract; click **Original** to switch back.
-   - Click **Add to Zotero** to save the article (with metadata) to your library.
-4. Use the **language dropdown** in the top bar to switch the whole interface between 中文 and English.
-5. Click **Refresh** to fetch the newest articles; results are cached for an hour by default.
+   - Click **EN / 中** to translate the title & abstract; click **Original** to switch back.
+   - Click **Add to Zotero** to save the paper (with metadata) to your library.
+4. **Switch language**: use the dropdown in the top bar to flip the whole interface between 中文 and English.
+5. **Refresh** fetches the newest articles; results are cached for one hour by default.
 
-Settings (interface language, issues to fetch, max articles, cache duration, translation service, type filtering, figure loading) live in **Zotero Settings → JournalLens**.
+### 使用方法(中文)
 
-### How it works
+1. 通过 🔭 **工具栏按钮**(搜索框旁)或 **工具 → JournalLens — 期刊速览** 打开。
+2. **关注期刊**:在左侧"添加期刊"框输入期刊名(如 *Nature Methods*)或 ISSN,点击搜索结果。
+3. **浏览文章流**:点标题/打开原文跳转;点"展开"读全文摘要;点图片放大看图注;点 **EN / 中** 翻译,点"原文"切回;点"添加到 Zotero"保存。
+4. **切换语言**:用顶栏下拉框切换整个界面的中文 / English。
+5. **刷新**获取最新文章,默认缓存 1 小时。
+
+---
+
+## ⚙️ Settings
+
+Open **Zotero Settings → JournalLens** (Zotero 设置 → JournalLens):
+
+| Setting | Default | Description |
+|---|---|---|
+| Interface language / 界面语言 | Follow Zotero | UI language: auto / English / 中文 |
+| Issues to fetch / 抓取期数 | 2 | How many recent issues to keep per journal |
+| Max articles per journal / 每刊最多文章数 | 50 | Upper bound fetched before filtering |
+| Cache duration / 缓存时长 | 60 min | How long feeds are cached |
+| Translation service / 翻译服务 | Google | `Google` or `MyMemory` (use MyMemory if Google is blocked) |
+| Only research content / 仅研究内容 | on | Filter out news/editorials/perspectives… |
+| Load figures / 加载图片 | on | Fetch figures & captions for OA articles |
+
+---
+
+## 🔧 How it works
 
 | Data | Source |
 |------|--------|
@@ -68,77 +142,82 @@ Settings (interface language, issues to fetch, max articles, cache duration, tra
 | Graphical-abstract / figures & captions | Europe PMC open-access full text (JATS XML) |
 | Title / abstract translation | Google translate (keyless) with a MyMemory fallback |
 
-- **Latest issues only**: by default JournalLens keeps the 2 most recent issues per journal (online-first articles count as the newest issue). Adjustable in settings.
-- **Type filtering**: items typed as news / editorial / comment / perspective / correction etc. in Europe PMC are hidden. Disable it in settings if you want everything.
-- **Figures & thumbnails**: shown for **open-access articles indexed in Europe PMC** (most biomedical and many life-science journals). The thumbnail prefers the graphical abstract / TOC image, falling back to Figure 1. For paywalled articles JournalLens shows title, authors, date and abstract where available (with the journal initials as the thumbnail).
-- **Translation in China**: if Google is unreachable, switch the translation service to **MyMemory** in settings.
+- **Figures & rich thumbnails** are available for **open-access articles indexed in Europe PMC** (most biomedical and many life-science journals). For paywalled articles, JournalLens still shows title, authors, date and abstract where available, with the journal initials as a placeholder thumbnail.
+- **Translation in China**: the default is Google; if it's unreachable, switch the translation service to **MyMemory** in settings.
+- 正文图片与缩略图来自 Europe PMC 收录的**开放获取**文章;付费墙文章会显示标题、作者、日期与摘要(若可得)。翻译默认 Google,若无法访问可在设置切换 **MyMemory**。
 
 ---
 
-## ✨ 功能介绍
+## 🛠 Build from source / 开发构建
 
-- **关注期刊** — 按期刊名或 ISSN 搜索(基于 Crossref,覆盖几乎所有学科的学术期刊),建立自己的关注列表。
-- **最新期数速览** — 在 Zotero 内打开卡片式阅读窗口,只展示各期刊**最新的几期**(默认 2 期),按发表日期聚合排序。
-- **只看研究内容** — 自动过滤新闻稿、社论、Perspective、更正等非研究类内容,只保留 Article、Review、Letter、Correspondence、Protocol 等真正的论文。
-- **不只是标题** — 每张卡片包含:
-  - 📄 完整**摘要**(可展开);
-  - 🖼️ 来自论文本身的**缩略图** — 优先使用图文摘要 / TOC 图,没有则用 Figure 1;
-  - 🔬 论文**正文主要 Figure 及图注**,点击任意图片可放大查看完整图注,快速判断这篇文章做了什么(开放获取文章,数据来自 Europe PMC)。
-- **中英互译** — 一键将文章标题和摘要在中英文之间翻译。
-- **全界面中英切换** — 随时从顶栏将整个界面在中文 / English 间切换。
-- **快速打开** — Zotero 主工具栏(搜索框旁)有 🔭 按钮,也可从工具菜单进入。
-- **一键导入** — 通过 DOI 将文章(含完整元数据)直接存入 Zotero 文献库。
-- **OA 标识** — 一眼识别可免费阅读的论文。
-- **内置打赏** — 窗口内直接显示 PayPal / 微信 / 支付宝 收款二维码。
-- **深色模式** — 跟随系统主题。
-- **永久免费** — 无需账号、无任何跟踪。如果它帮你节省了时间,欢迎[打赏支持 ♥](DONATE.md)。
+```bash
+git clone https://github.com/yunze623/JournalLens.git
+cd JournalLens
 
-## 📦 安装方法
+# Build the .xpi  →  build/journallens-<version>.xpi
+powershell -ExecutionPolicy Bypass -File build.ps1
+```
 
-1. 在 [Releases 页面](https://github.com/yunze623/JournalLens/releases)下载最新的 `journallens-x.x.x.xpi`。
-2. 打开 Zotero,进入 **工具 → 插件**。
-3. 点击右上角齿轮 ⚙ → **从文件安装插件…**,选择下载的 `.xpi` 文件。
+**Run from source during development** (see the [Zotero plugin dev guide](https://www.zotero.org/support/dev/client_coding/plugin_development)):
 
-> 需要 Zotero 7 及以上版本(已在 Zotero 9 上测试)。
+1. Create a file named `journallens@yunze623.github.io` in your Zotero profile's `extensions/` directory whose contents are the absolute path to this project folder.
+2. Remove the `extensions.lastAppBuildId` / `extensions.lastAppVersion` lines from `prefs.js` in the profile.
+3. Start Zotero with `-purgecaches` to reload after code changes.
 
-## 🚀 使用方法
+### Project layout
 
-1. 通过主工具栏的 **🔭 按钮**(搜索框旁)或 **工具 → JournalLens — 期刊速览** 打开。
-2. 在左侧"添加期刊"框中输入期刊名(如 *Nature Methods*)或 ISSN,点击搜索结果即可关注。
-3. 浏览文章流:
-   - 点击**标题**或**打开原文**跳转到出版社页面;
-   - 点击**展开**阅读完整摘要;
-   - 点击**图片**放大查看 Figure 和完整图注;
-   - 点击 **EN / 中** 翻译标题和摘要,点击**原文**切换回原文;
-   - 点击**添加到 Zotero** 一键保存文献。
-4. 用顶栏的**语言下拉框**将整个界面在中文 / English 间切换。
-5. 点击**刷新**获取最新文章,默认缓存 1 小时。
+```
+manifest.json          Plugin manifest (id, version, Zotero compatibility)
+bootstrap.js           Lifecycle hooks; registers chrome, prefs pane, UI
+prefs.js               Default preferences
+content/
+  journallens.js       Core service: feeds, filtering, translation, import
+  feed.xhtml/.js/.css  The reading window
+  preferences.xhtml    Settings pane
+  donate/              PayPal / WeChat / Alipay QR images
+locale/en-US, zh-CN    Fluent localisation for the settings pane
+icons/                 Plugin & toolbar icons
+docs/                  README assets
+build.ps1              Packs the .xpi
+publish.ps1            Creates the GitHub repo/release (needs `gh auth login`)
+updates.json           Auto-update manifest
+```
 
-设置项(界面语言、抓取期数、每刊最多文章数、缓存时长、翻译服务、类型过滤、是否加载图片)位于 **Zotero 设置 → JournalLens**。
+---
 
-> 📌 缩略图、正文图片和图注来自 Europe PMC 收录的**开放获取**文章(覆盖大部分生物医学及生命科学期刊),优先取图文摘要/TOC,其次取 Figure 1;付费墙文章会显示标题、作者、日期和摘要(若可获得),缩略图用期刊缩写占位。
-> 📌 翻译默认使用 Google,若在中国大陆无法访问,可在设置中切换到 **MyMemory**。
+## 📜 Changelog / 版本记录
+
+See [CHANGELOG.md](CHANGELOG.md) for the full history.
+
+### v0.2.0 — 2026-06-13
+EN ⇄ 中文 translation · full bilingual UI · research-content filtering · latest-issues mode · graphical-abstract/TOC thumbnails · in-app donation panel · toolbar quick-open button.
+
+### v0.1.0 — 2026-06-12
+Initial release: follow journals, latest-article feed, abstracts, OA figures & captions, figure lightbox, one-click Zotero import, bilingual localisation, dark mode.
 
 ---
 
 ## ❤️ Support / 打赏
 
-JournalLens is free and open source. If it makes your literature workflow happier, consider supporting development:
+JournalLens is **free and open source**, and always will be. If it saves you time, a small tip is hugely appreciated and keeps the updates coming! You can also open this panel inside the plugin via **♥ Donate / 打赏支持**.
 
-JournalLens 完全免费开源。如果它让你的文献工作更轻松,欢迎请作者喝杯咖啡:
+JournalLens **永久免费开源**。如果它帮你节省了时间,欢迎打赏支持 —— 你的支持是持续更新的最大动力!也可在插件窗口点击 **♥ 打赏支持** 打开此面板。
 
-**[→ Donate / 打赏方式](DONATE.md)**
+<div align="center">
 
-## 🛠 Development
+| PayPal | 微信支付 WeChat Pay | 支付宝 Alipay |
+|:---:|:---:|:---:|
+| <img src="content/donate/paypal.png" width="190" alt="PayPal"/> | <img src="content/donate/wechat.png" width="190" alt="WeChat Pay"/> | <img src="content/donate/alipay.png" width="190" alt="Alipay"/> |
 
-```bash
-git clone https://github.com/yunze623/JournalLens.git
-cd JournalLens
-# Build the .xpi
-powershell -ExecutionPolicy Bypass -File build.ps1
-```
+</div>
 
-To run from source during development, see the [Zotero plugin development guide](https://www.zotero.org/support/dev/client_coding/plugin_development): create a file named `journallens@yunze623.github.io` in your Zotero profile's `extensions` directory containing the absolute path to this folder, then start Zotero with `-purgecaches`.
+Other ways to help / 其他支持方式: ⭐ **Star** the repo · 🐛 report bugs or ideas in [Issues](https://github.com/yunze623/JournalLens/issues) · 📢 share it with colleagues.
+
+---
+
+## 🤝 Contributing
+
+Issues and pull requests are welcome! If you hit a journal that doesn't work well, please open an [issue](https://github.com/yunze623/JournalLens/issues) with the journal name / ISSN.
 
 ## 📄 License
 

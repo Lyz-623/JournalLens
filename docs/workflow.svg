@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 170" width="1120" height="170" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',Arial,sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#9aa1ab"/>
+    </marker>
+  </defs>
+  <rect width="1120" height="170" fill="none"/>
+  <g>
+    <!-- step 1 -->
+    <rect x="20" y="35" width="240" height="100" rx="12" fill="#ffffff" stroke="#dde1e6"/>
+    <circle cx="52" cy="67" r="15" fill="#e6eefc"/>
+    <text x="52" y="72" font-size="15" font-weight="700" fill="#2d6cdf" text-anchor="middle">1</text>
+    <text x="80" y="72" font-size="16" font-weight="700" fill="#1c1e21">Follow a journal</text>
+    <text x="40" y="100" font-size="12.5" fill="#5c6470">Search by name or ISSN</text>
+    <text x="40" y="118" font-size="12.5" fill="#5c6470">(Crossref, any discipline)</text>
+    <!-- step 2 -->
+    <rect x="300" y="35" width="240" height="100" rx="12" fill="#ffffff" stroke="#dde1e6"/>
+    <circle cx="332" cy="67" r="15" fill="#e6eefc"/>
+    <text x="332" y="72" font-size="15" font-weight="700" fill="#2d6cdf" text-anchor="middle">2</text>
+    <text x="360" y="72" font-size="16" font-weight="700" fill="#1c1e21">Browse latest issues</text>
+    <text x="320" y="100" font-size="12.5" fill="#5c6470">2 most recent issues,</text>
+    <text x="320" y="118" font-size="12.5" fill="#5c6470">research content only</text>
+    <!-- step 3 -->
+    <rect x="580" y="35" width="240" height="100" rx="12" fill="#ffffff" stroke="#dde1e6"/>
+    <circle cx="612" cy="67" r="15" fill="#e6eefc"/>
+    <text x="612" y="72" font-size="15" font-weight="700" fill="#2d6cdf" text-anchor="middle">3</text>
+    <text x="640" y="72" font-size="16" font-weight="700" fill="#1c1e21">Scan &amp; translate</text>
+    <text x="600" y="100" font-size="12.5" fill="#5c6470">Abstract · figures + captions</text>
+    <text x="600" y="118" font-size="12.5" fill="#5c6470">EN ⇄ 中文 in one click</text>
+    <!-- step 4 -->
+    <rect x="860" y="35" width="240" height="100" rx="12" fill="#ffffff" stroke="#dde1e6"/>
+    <circle cx="892" cy="67" r="15" fill="#e6eefc"/>
+    <text x="892" y="72" font-size="15" font-weight="700" fill="#2d6cdf" text-anchor="middle">4</text>
+    <text x="920" y="72" font-size="16" font-weight="700" fill="#1c1e21">Add to Zotero</text>
+    <text x="880" y="100" font-size="12.5" fill="#5c6470">One click saves the item</text>
+    <text x="880" y="118" font-size="12.5" fill="#5c6470">with full metadata</text>
+    <!-- arrows -->
+    <line x1="262" y1="85" x2="298" y2="85" stroke="#9aa1ab" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="542" y1="85" x2="578" y2="85" stroke="#9aa1ab" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="822" y1="85" x2="858" y2="85" stroke="#9aa1ab" stroke-width="2" marker-end="url(#arrow)"/>
+  </g>
+</svg>
