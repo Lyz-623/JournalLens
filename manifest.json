@@ -1,0 +1,20 @@
+{
+	"manifest_version": 2,
+	"name": "JournalLens",
+	"version": "0.1.0",
+	"description": "Follow your favorite journals inside Zotero: browse the latest articles with abstracts, figure thumbnails and captions, and add them to your library in one click.",
+	"author": "yunze",
+	"homepage_url": "https://github.com/yunze623/JournalLens",
+	"icons": {
+		"48": "icons/icon48.png",
+		"96": "icons/icon96.png"
+	},
+	"applications": {
+		"zotero": {
+			"id": "journallens@yunze623.github.io",
+			"update_url": "https://raw.githubusercontent.com/yunze623/JournalLens/main/updates.json",
+			"strict_min_version": "7.0",
+			"strict_max_version": "9.0.*"
+		}
+	}
+}

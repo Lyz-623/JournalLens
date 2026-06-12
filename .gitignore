@@ -1,0 +1,4 @@
+build/
+*.xpi
+.DS_Store
+Thumbs.db
