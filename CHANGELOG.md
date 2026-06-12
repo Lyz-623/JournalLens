@@ -8,6 +8,31 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.6] — 2026-06-13
+
+Figure validation and recent-window patch.
+
+### Changed / 变更
+- Default journal fetch window is now 7 days instead of 30 days, while the
+  saved setting can still be changed from 1 to 180 days. 默认抓取周期改为近 7 天，
+  并保留可保存的自定义范围。
+- Figure extraction now validates images before display, filters blank or
+  low-quality thumbnail results, and prefers high-resolution / full-size image
+  candidates. 展示前检查图片是否可加载并优先使用高清图。
+- Publisher article pages are also merged when Europe PMC figures exist, so
+  page-level `Extended Fig. N` images can be included. 合并出版商页面中的
+  Extended Figure。
+
+### Fixed / 修复
+- Figure strips no longer rename images by display order. `Fig. 1` is shown
+  only when the source really identifies Figure 1. 不再按插件图片顺序伪造 Fig 编号。
+- Duplicate figures with the same real figure label are merged instead of
+  shown multiple times. 修复同一 Figure 重复展示。
+- Older cached figure lists are discarded through a new cache schema.
+  更新缓存版本以清理旧的重复/空白 Figure。
+
+---
+
 ## [0.3.5] — 2026-06-13
 
 Abstract and body-figure source patch.
@@ -168,6 +193,7 @@ Initial release.
 - Bilingual (en-US / zh-CN) Fluent localisation, light/dark theme. 中英双语、深色模式。
 - Preferences pane, XPI build script, auto-update manifest. 偏好设置、打包脚本、自动更新清单。
 
+[0.3.6]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.6
 [0.3.5]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.5
 [0.3.4]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.4
 [0.3.3]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.3

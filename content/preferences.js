@@ -16,7 +16,7 @@
 			filterGroup: "Content filter",
 			filter: "Only show research content",
 			figuresGroup: "Figures",
-			figures: "Load figures and preview images",
+			figures: "Load body and extended figures",
 			homepage: "GitHub",
 			donate: "Donate"
 		},
@@ -31,7 +31,7 @@
 			filterGroup: "内容过滤",
 			filter: "仅显示研究类内容",
 			figuresGroup: "论文图片",
-			figures: "加载正文图片和预览图",
+			figures: "加载正文图和 Extended Figure",
 			homepage: "GitHub",
 			donate: "打赏支持"
 		}
@@ -89,7 +89,7 @@
 
 	function init() {
 		bindValue("pref-language", "uiLanguage", "auto");
-		bindValue("pref-days", "daysToFetch", 30, value => Math.max(7, Math.min(180, parseInt(value) || 30)));
+		bindValue("pref-days", "daysToFetch", 7, value => Math.max(1, Math.min(180, parseInt(value) || 7)));
 		bindValue("pref-articles", "articlesPerJournal", 200, value => Math.max(10, Math.min(500, parseInt(value) || 200)));
 		bindValue("pref-cache", "cacheMinutes", 60, value => Math.max(5, Math.min(1440, parseInt(value) || 60)));
 		bindValue("pref-translate", "translateProvider", "google");

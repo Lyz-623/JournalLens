@@ -19,7 +19,8 @@ var JournalLens = {
 	rootURI: null,
 
 	PREF_BRANCH: "extensions.journallens.",
-	CACHE_SCHEMA: "figures-v5-body-only",
+	CACHE_SCHEMA: "figures-v6-validated-real-labels",
+	DEFAULT_DAYS_SCHEMA: "days-v2-week-default",
 	CROSSREF_MAILTO: "yunze623@gmail.com",
 	HOMEPAGE_URL: "https://github.com/Lyz-623/JournalLens",
 	DONATE_URL: "https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md",
@@ -141,6 +142,13 @@ var JournalLens = {
 		if (this.getPref("cacheSchema") !== this.CACHE_SCHEMA) {
 			this._cache.clear();
 			this.setPref("cacheSchema", this.CACHE_SCHEMA);
+		}
+		if (this.getPref("defaultDaysSchema") !== this.DEFAULT_DAYS_SCHEMA) {
+			let currentDays = parseInt(this.getPref("daysToFetch")) || 30;
+			if (currentDays === 30) {
+				this.setPref("daysToFetch", 7);
+			}
+			this.setPref("defaultDaysSchema", this.DEFAULT_DAYS_SCHEMA);
 		}
 	},
 
@@ -798,7 +806,7 @@ var JournalLens = {
 			return cached.articles;
 		}
 		let rows = parseInt(this.getPref("articlesPerJournal")) || 200;
-		let days = parseInt(this.getPref("daysToFetch")) || 30;
+		let days = parseInt(this.getPref("daysToFetch")) || 7;
 
 		let articles = this.dedupeArticles(await this.fetchJournalFeed(issn, rows, days));
 		await this.enrichWithEuropePMC(articles);

@@ -572,29 +572,69 @@ function cleanText(text) {
 function normalizeFigureText(text) {
 	return cleanText(text)
 		.toLowerCase()
-		.replace(/[.:;,\-–—_()[\]{}'"“”‘’]/g, "")
+		.replace(/[.:;,\-\u2013\u2014_()[\]{}'"\u201c\u201d\u2018\u2019]/g, "")
 		.replace(/\s+/g, " ");
+}
+
+function parseFigureLabelInfo(text) {
+	let value = cleanText(text);
+	if (!value) {
+		return null;
+	}
+	let extended = value.match(/\bextended\s+(?:data\s+)?fig(?:ure)?\.?\s*([s]?\d+)([a-z]?)\b/i);
+	if (extended) {
+		let number = parseInt(extended[1].replace(/^s/i, ""), 10);
+		if (!number) {
+			return null;
+		}
+		let suffix = (extended[2] || "").toLowerCase();
+		return {
+			kind: "extended",
+			group: 1,
+			number,
+			suffix,
+			key: "extended:" + number + ":" + suffix,
+			label: "Extended Fig. " + number + suffix
+		};
+	}
+	let normal = value.match(/\bfig(?:ure)?\.?\s*([s]?\d+)([a-z]?)\b/i);
+	if (!normal && value.length <= 12) {
+		normal = value.match(/^\s*([s]?\d+)([a-z]?)(?:\s*[:.\-\u2013\u2014]|\s*$)/i);
+	}
+	if (!normal) {
+		return null;
+	}
+	let supplemental = /^s/i.test(normal[1])
+		|| /\b(?:supplementary|supplemental|suppl\.?)\s+fig(?:ure)?/i.test(value);
+	let number = parseInt(normal[1].replace(/^s/i, ""), 10);
+	if (!number) {
+		return null;
+	}
+	let suffix = (normal[2] || "").toLowerCase();
+	let labelNumber = (supplemental ? "S" : "") + number + suffix;
+	return {
+		kind: supplemental ? "supplementary" : "main",
+		group: supplemental ? 2 : 0,
+		number,
+		suffix,
+		key: (supplemental ? "supplementary:" : "main:") + number + ":" + suffix,
+		label: "Fig. " + labelNumber
+	};
 }
 
 function splitFigureLabel(text) {
 	let value = cleanText(text);
-	let match = value.match(/^((?:(?:extended|supplementary|suppl\.?|data)\s+)?(?:fig(?:ure)?\.?\s*)?[s]?\d+[a-z]?)(?:\s*[:.\-–—]\s+)(.+)$/i);
+	let info = parseFigureLabelInfo(value);
+	let match = value.match(/^((?:extended\s+(?:data\s+)?)?fig(?:ure)?\.?\s*[s]?\d+[a-z]?|[s]?\d+[a-z]?)(?:\s*[:.\-\u2013\u2014]\s*|\s+)(.+)$/i);
 	if (match && match[2] && match[2].length > 10) {
-		return { label: normalizeFigureLabel(match[1]), caption: cleanText(match[2]) };
+		return { info: parseFigureLabelInfo(match[1]) || info, caption: cleanText(match[2]) };
 	}
-	return { label: normalizeFigureLabel(value), caption: "" };
+	return { info, caption: "" };
 }
 
 function normalizeFigureLabel(label) {
-	let value = cleanText(label);
-	if (!value) {
-		return "";
-	}
-	let match = value.match(/\b(?:fig(?:ure)?\.?\s*)?([s]?\d+[a-z]?)\b/i);
-	if (!match) {
-		return value;
-	}
-	return "Fig. " + match[1].toUpperCase();
+	let info = parseFigureLabelInfo(label);
+	return info ? info.label : "";
 }
 
 function isPreviewFigure(text) {
@@ -621,33 +661,77 @@ function stripCaptionLabel(label, caption) {
 		return "";
 	}
 	let escaped = escapeRegExp(l).replace(/\\\./g, "\\.?");
-	let re = new RegExp("^\\s*" + escaped + "\\s*[:.\\-–—]?\\s*", "i");
+	let re = new RegExp("^\\s*" + escaped + "\\s*[:.\\-\\u2013\\u2014]?\\s*", "i");
 	return cleanText(c.replace(re, ""));
+}
+
+function stripKnownFigureLabel(info, caption) {
+	let text = cleanText(caption);
+	if (!info || !text) {
+		return text;
+	}
+	let number = info.number + (info.suffix || "");
+	let variants = info.kind === "extended"
+		? [
+			info.label,
+			"Extended Data Fig. " + number,
+			"Extended Data Figure " + number,
+			"Extended Figure " + number
+		]
+		: [
+			info.label,
+			"Figure " + (info.kind === "supplementary" ? "S" : "") + number
+		];
+	for (let label of variants) {
+		text = stripCaptionLabel(label, text);
+	}
+	return text;
 }
 
 function cleanFigure(figure) {
 	if (!figure) {
 		return null;
 	}
-	let urls = JournalLens._uniqueURLs((figure.urls || []).filter(isUsefulImageURL));
+	let rawURLs = Array.isArray(figure.urls) ? figure.urls : [figure.url];
+	let urls = JournalLens._uniqueURLs(rawURLs
+		.flatMap(expandHighResURLs)
+		.filter(isUsefulImageURL));
 	if (!urls.length) {
 		return null;
 	}
 	let label = cleanText(figure.label);
 	let caption = cleanText(figure.caption);
 	let split = splitFigureLabel(label);
-	if (split.caption && !caption) {
-		label = split.label;
-		caption = split.caption;
+	let info = split.info;
+	if (split.caption) {
+		caption = caption || split.caption;
 	}
-	else if (split.caption && normalizeFigureText(split.caption) === normalizeFigureText(caption)) {
-		label = split.label;
+	if (!info) {
+		let captionSplit = splitFigureLabel(caption);
+		info = captionSplit.info;
+		if (captionSplit.caption) {
+			caption = captionSplit.caption;
+		}
 	}
-	else {
-		label = normalizeFigureLabel(label);
+	if (!info) {
+		info = parseFigureLabelInfo([
+			figure.metaLabel || "",
+			figure.urlHint || "",
+			urls.join(" ")
+		].join(" "));
 	}
-	caption = stripCaptionLabel(label, caption);
-	return { label, caption, urls };
+	if (!info) {
+		return null;
+	}
+	caption = stripKnownFigureLabel(info, caption);
+	return {
+		label: info.label,
+		caption,
+		urls,
+		labelInfo: info,
+		width: figure.width || 0,
+		height: figure.height || 0
+	};
 }
 
 function figureCaptionText(figure) {
@@ -672,9 +756,11 @@ function figureURLKey(url) {
 			.replace(/([._-])(full|large|medium|small|thumb|thumbnail|hires|highres)([._-])/gi, "$1$3")
 			.replace(/\/(full|large|medium|small|thumb|thumbnail|hires|highres)\//gi, "/");
 		let file = path.split("/").pop() || path;
+		let prefix = /(extended|ext[-_]?data|extended[-_]?data)/i.test(path) ? "extendedfig" : "fig";
 		let figureToken = file.match(/(?:fig(?:ure)?|f|gr|graphic|image|plate)[._-]?0*([1-9]\d*)([a-z])?/i);
 		if (figureToken) {
-			return u.hostname.toLowerCase() + "::fig" + figureToken[1] + (figureToken[2] || "");
+			return u.hostname.toLowerCase() + "::" + prefix
+				+ figureToken[1] + (figureToken[2] || "");
 		}
 		return u.hostname.toLowerCase() + path;
 	}
@@ -698,14 +784,16 @@ function figureNumberKey(figure) {
 	if (!clean) {
 		return "";
 	}
-	let labelMatch = clean.label.match(/^Fig\.\s*([s]?[1-9]\d*)([a-z])?$/i);
-	let text = [clean.label, clean.caption].filter(Boolean).join(" ");
-	let match = labelMatch || text.match(/\bfig(?:ure)?\.?\s*([1-9]\d*)([a-z])?\b/i);
-	return match ? "fig" + match[1] + (match[2] || "").toLowerCase() : "";
+	return clean.labelInfo ? clean.labelInfo.key : "";
 }
 
 function createFigureSeen(seedFigures = []) {
-	let seen = { urls: new Set(), captions: new Set(), numbers: new Set() };
+	let seen = {
+		urls: new Set(),
+		captions: new Set(),
+		numbers: new Set(),
+		byNumber: new Map()
+	};
 	for (let figure of seedFigures) {
 		let clean = cleanFigure(figure);
 		if (!clean) {
@@ -721,23 +809,42 @@ function createFigureSeen(seedFigures = []) {
 		let numberKey = figureNumberKey(clean);
 		if (numberKey) {
 			seen.numbers.add(numberKey);
+			seen.byNumber.set(numberKey, clean);
 		}
 	}
 	return seen;
 }
 
-function normalizeFigureListLabels(figures) {
-	return (figures || []).map((figure, index) => {
-		let clean = cleanFigure(figure);
-		if (!clean) {
-			return null;
+function mergeFigure(existing, incoming) {
+	existing.urls = JournalLens._uniqueURLs([...(existing.urls || []), ...(incoming.urls || [])]);
+	if (!existing.caption && incoming.caption) {
+		existing.caption = incoming.caption;
+	}
+	existing.width = Math.max(existing.width || 0, incoming.width || 0);
+	existing.height = Math.max(existing.height || 0, incoming.height || 0);
+}
+
+function figureSortValue(figure) {
+	let clean = cleanFigure(figure);
+	let info = clean && clean.labelInfo;
+	if (!info) {
+		return [9, 9999, ""];
+	}
+	return [info.group, info.number, info.suffix || ""];
+}
+
+function sortFigures(figures) {
+	return (figures || []).slice().sort((a, b) => {
+		let av = figureSortValue(a);
+		let bv = figureSortValue(b);
+		if (av[0] !== bv[0]) {
+			return av[0] - bv[0];
 		}
-		let label = normalizeFigureLabel(clean.label);
-		if (!/^Fig\.\s*[S]?\d+/i.test(label)) {
-			label = "Fig. " + (index + 1);
+		if (av[1] !== bv[1]) {
+			return av[1] - bv[1];
 		}
-		return { label, caption: clean.caption, urls: clean.urls };
-	}).filter(Boolean);
+		return av[2].localeCompare(bv[2]);
+	});
 }
 
 function dedupeFigures(figures) {
@@ -746,15 +853,14 @@ function dedupeFigures(figures) {
 	for (let figure of figures || []) {
 		addFigure(out, seen, figure);
 	}
-	return normalizeFigureListLabels(out);
+	return sortFigures(out);
 }
 
-function imageFromSrcset(srcset) {
+function imageURLsFromSrcset(srcset) {
 	if (!srcset) {
-		return "";
+		return [];
 	}
-	let best = "";
-	let bestWidth = 0;
+	let out = [];
 	for (let part of srcset.split(",")) {
 		let pieces = part.trim().split(/\s+/);
 		let url = pieces[0];
@@ -769,38 +875,85 @@ function imageFromSrcset(srcset) {
 				width = Math.round(parseFloat(density[1]) * 1000);
 			}
 		}
-		if (!best || width > bestWidth) {
-			best = url;
-			bestWidth = width;
+		if (url) {
+			out.push({ url, width });
 		}
 	}
-	return best;
+	return out
+		.sort((a, b) => b.width - a.width)
+		.map(item => item.url);
 }
 
-function imageURLFromElement(img, baseURL) {
-	let attrs = [
-		"src", "data-src", "data-original", "data-lazy-src", "data-image",
-		"data-large", "data-full", "data-hires", "data-download-url",
-		"data-large-src", "data-full-src", "data-high-res-src", "data-zoom-src",
-		"data-img-src", "data-original-src"
-	];
-	for (let attr of attrs) {
-		let url = JournalLens._resolveURL(baseURL, img.getAttribute(attr));
-		if (url) {
-			return url;
+function imageFromSrcset(srcset) {
+	return imageURLsFromSrcset(srcset)[0] || "";
+}
+
+function expandHighResURLs(url) {
+	if (!url) {
+		return [];
+	}
+	let urls = [url];
+	try {
+		let u = new URL(url);
+		let noQuery = new URL(u.href);
+		for (let key of [
+			"width", "height", "w", "h", "fit", "crop", "resize", "quality",
+			"auto", "format", "ixlib", "dpr", "output"
+		]) {
+			noQuery.searchParams.delete(key);
+		}
+		urls.push(noQuery.href);
+		let originalPath = u.pathname;
+		let paths = [
+			originalPath.replace(/\/cdn-cgi\/image\/[^/]+\//i, "/"),
+			originalPath.replace(/\/(?:thumb|thumbnail|preview|small|medium)\//ig, "/"),
+			originalPath.replace(/([/_-])(?:thumb|thumbnail|preview|small|medium)([._/-])/ig, "$1$2")
+		];
+		for (let path of paths) {
+			if (path && path !== originalPath) {
+				let variant = new URL(u.href);
+				variant.pathname = path;
+				for (let key of ["width", "height", "w", "h", "fit", "crop", "resize"]) {
+					variant.searchParams.delete(key);
+				}
+				urls.push(variant.href);
+			}
 		}
 	}
-	let srcset = img.getAttribute("srcset") || img.getAttribute("data-srcset");
-	let url = JournalLens._resolveURL(baseURL, imageFromSrcset(srcset));
-	if (url) {
-		return url;
+	catch (e) {
+		// Keep the original URL.
 	}
-	let source = img.closest && img.closest("picture")
-		&& img.closest("picture").querySelector("source[srcset], source[data-srcset]");
-	return source
-		? JournalLens._resolveURL(baseURL,
-			imageFromSrcset(source.getAttribute("srcset") || source.getAttribute("data-srcset")))
-		: "";
+	return JournalLens._uniqueURLs(urls);
+}
+
+function imageURLsFromElement(img, baseURL) {
+	let urls = [];
+	let add = (value) => {
+		let resolved = JournalLens._resolveURL(baseURL, value);
+		if (resolved) {
+			urls.push(...expandHighResURLs(resolved));
+		}
+	};
+	let attrs = [
+		"data-download-url", "data-full-src", "data-high-res-src", "data-hires",
+		"data-full", "data-original", "data-original-src", "data-zoom-src",
+		"data-large", "data-large-src", "data-image", "data-img-src",
+		"data-lazy-src", "data-src", "src"
+	];
+	for (let attr of attrs) {
+		add(img.getAttribute(attr));
+	}
+	for (let url of imageURLsFromSrcset(img.getAttribute("srcset") || img.getAttribute("data-srcset"))) {
+		add(url);
+	}
+	let picture = img.closest && img.closest("picture");
+	let sources = picture ? picture.querySelectorAll("source[srcset], source[data-srcset]") : [];
+	for (let source of sources) {
+		for (let url of imageURLsFromSrcset(source.getAttribute("srcset") || source.getAttribute("data-srcset"))) {
+			add(url);
+		}
+	}
+	return JournalLens._uniqueURLs(urls).filter(isUsefulImageURL);
 }
 
 function isUsefulImageURL(url) {
@@ -829,15 +982,20 @@ function addFigure(list, seen, figure) {
 	if (!clean) {
 		return;
 	}
+	let numberKey = figureNumberKey(clean);
+	if (numberKey && seen.byNumber.has(numberKey)) {
+		mergeFigure(seen.byNumber.get(numberKey), clean);
+		return;
+	}
 	let urlKeys = clean.urls.map(figureURLKey).filter(Boolean);
-	if (urlKeys.some(key => seen.urls.has(key))) {
+	let hasURLDuplicate = urlKeys.some(key => seen.urls.has(key));
+	if (hasURLDuplicate && (!numberKey || seen.numbers.has(numberKey))) {
 		return;
 	}
 	let textKey = figureTextKey(clean);
 	if (textKey && textKey.length > 12 && seen.captions.has(textKey)) {
 		return;
 	}
-	let numberKey = figureNumberKey(clean);
 	if (numberKey && seen.numbers.has(numberKey)
 		&& (!textKey || textKey.length < 36 || seen.captions.has(textKey))) {
 		return;
@@ -850,6 +1008,7 @@ function addFigure(list, seen, figure) {
 	}
 	if (numberKey) {
 		seen.numbers.add(numberKey);
+		seen.byNumber.set(numberKey, clean);
 	}
 	list.push(clean);
 }
@@ -861,26 +1020,52 @@ function metaOrLinkURL(el, baseURL) {
 	return JournalLens._resolveURL(baseURL, el.getAttribute("content") || el.getAttribute("href"));
 }
 
-function figureURLFromContainer(container, baseURL) {
-	let img = container.querySelector("img");
-	let url = img && imageURLFromElement(img, baseURL);
-	if (url) {
-		return url;
+function imageURLScore(url) {
+	let value = String(url || "").toLowerCase();
+	let score = 50;
+	if (/(download|full|hi[-_]?res|high[-_]?res|large|original|zoom)/i.test(value)) {
+		score -= 30;
 	}
-	let source = container.querySelector("source[srcset], source[data-srcset]");
-	url = source && JournalLens._resolveURL(baseURL,
-		imageFromSrcset(source.getAttribute("srcset") || source.getAttribute("data-srcset")));
-	if (url) {
-		return url;
+	if (/\.(jpe?g|png|gif|webp|tiff?)([?#].*)?$/i.test(value)) {
+		score -= 10;
 	}
-	for (let link of container.querySelectorAll("a[href]")) {
-		url = JournalLens._resolveURL(baseURL, link.getAttribute("href"));
-		if (/\.(jpe?g|png|gif|webp|tiff?)([?#].*)?$/i.test(url)
-			|| /(fig(?:ure)?|graphical|toc|image|medium|large|hires|full)/i.test(url)) {
-			return url;
+	if (/(thumb|thumbnail|preview|small|medium|lowres|w\d{2,3}|width=\d{2,3})/i.test(value)) {
+		score += 30;
+	}
+	return score;
+}
+
+function isPotentialFigureURL(url) {
+	return /\.(jpe?g|png|gif|webp|tiff?)([?#].*)?$/i.test(url)
+		|| /(fig(?:ure)?|extended|image|graphic|large|hi[-_]?res|high[-_]?res|full|download|original|zoom)/i.test(url);
+}
+
+function figureURLsFromContainer(container, baseURL) {
+	let urls = [];
+	let add = (value) => {
+		let resolved = JournalLens._resolveURL(baseURL, value);
+		if (resolved && isPotentialFigureURL(resolved)) {
+			urls.push(...expandHighResURLs(resolved));
+		}
+	};
+	let links = Array.from(container.querySelectorAll("a[href]"))
+		.map(link => JournalLens._resolveURL(baseURL, link.getAttribute("href")))
+		.filter(isPotentialFigureURL)
+		.sort((a, b) => imageURLScore(a) - imageURLScore(b));
+	for (let url of links) {
+		add(url);
+	}
+	for (let img of container.querySelectorAll("img")) {
+		urls.push(...imageURLsFromElement(img, baseURL));
+	}
+	for (let source of container.querySelectorAll("source[srcset], source[data-srcset]")) {
+		for (let url of imageURLsFromSrcset(source.getAttribute("srcset") || source.getAttribute("data-srcset"))) {
+			add(url);
 		}
 	}
-	return "";
+	return JournalLens._uniqueURLs(urls)
+		.filter(isUsefulImageURL)
+		.sort((a, b) => imageURLScore(a) - imageURLScore(b));
 }
 
 function textFromFirst(container, selectors) {
@@ -905,18 +1090,28 @@ function figureFromContainer(container, baseURL) {
 	if (isPreviewFigure(marker)) {
 		return null;
 	}
-	let url = figureURLFromContainer(container, baseURL);
-	if (!isUsefulImageURL(url)) {
+	let urls = figureURLsFromContainer(container, baseURL);
+	if (!urls.length) {
 		return null;
 	}
 	let img = container.querySelector("img");
 	let label = textFromFirst(container, [
 		".label", ".figure-label", ".fig-label", "[class*='label']", "label"
-	]) || cleanText(img && img.getAttribute("alt")) || "Figure";
+	]) || cleanText(img && (img.getAttribute("alt") || img.getAttribute("aria-label")));
 	let caption = textFromFirst(container, [
 		"figcaption", ".caption", ".figure-caption", ".fig-caption", "[class*='caption']"
 	]) || cleanText(img && (img.getAttribute("title") || img.getAttribute("alt")));
-	return figureFromURL(url, label, caption);
+	return cleanFigure({
+		label,
+		caption,
+		urls,
+		metaLabel: [
+			marker,
+			img && img.getAttribute("alt"),
+			img && img.getAttribute("title")
+		].filter(Boolean).join(" "),
+		urlHint: urls.join(" ")
+	});
 }
 
 function parseHTMLVisuals(htmlText, baseURL) {
@@ -931,7 +1126,7 @@ function parseHTMLVisuals(htmlText, baseURL) {
 		"[class*='extended']"
 	].join(",");
 	for (let fig of doc.querySelectorAll(containers)) {
-		if (figures.length >= 12) {
+		if (figures.length >= 24) {
 			break;
 		}
 		addFigure(figures, seen, figureFromContainer(fig, baseURL));
@@ -975,7 +1170,7 @@ function parseXMLVisuals(xmlText, baseURL) {
 			continue;
 		}
 		let figure = {
-			label: label || "Figure",
+			label,
 			caption,
 			urls: genericGraphicURLs(baseURL, href)
 		};
@@ -1001,7 +1196,7 @@ async function fetchPublisherVisuals(article) {
 			for (let figure of parsed.figures || []) {
 				addFigure(figures, seen, figure);
 			}
-			if (figures.length >= 8) {
+			if (figures.length >= 24) {
 				break;
 			}
 		}
@@ -1010,6 +1205,95 @@ async function fetchPublisherVisuals(article) {
 		}
 	}
 	return { figures };
+}
+
+function probeImageURL(url, timeout = 8000) {
+	return new Promise((resolve) => {
+		if (!isUsefulImageURL(url)) {
+			resolve(null);
+			return;
+		}
+		let img = new Image();
+		let settled = false;
+		let finish = (result) => {
+			if (settled) {
+				return;
+			}
+			settled = true;
+			clearTimeout(timer);
+			img.onload = null;
+			img.onerror = null;
+			resolve(result);
+		};
+		let timer = setTimeout(() => finish(null), timeout);
+		img.onload = () => finish({
+			url,
+			width: img.naturalWidth || img.width || 0,
+			height: img.naturalHeight || img.height || 0
+		});
+		img.onerror = () => finish(null);
+		img.src = url;
+	});
+}
+
+function figureImageLooksUsable(image) {
+	if (!image || !image.width || !image.height) {
+		return false;
+	}
+	let maxEdge = Math.max(image.width, image.height);
+	let minEdge = Math.min(image.width, image.height);
+	return maxEdge >= 360 && minEdge >= 120 && image.width * image.height >= 50000;
+}
+
+async function validateFigure(figure) {
+	let clean = cleanFigure(figure);
+	if (!clean) {
+		return null;
+	}
+	let bestLoad = null;
+	for (let url of clean.urls) {
+		let image = await probeImageURL(url);
+		if (!image) {
+			continue;
+		}
+		bestLoad = bestLoad || image;
+		if (figureImageLooksUsable(image)) {
+			return {
+				...clean,
+				urls: JournalLens._uniqueURLs([image.url, ...clean.urls.filter(u => u !== image.url)]),
+				width: image.width,
+				height: image.height
+			};
+		}
+	}
+	if (bestLoad && figureImageLooksUsable({
+		width: Math.max(bestLoad.width, clean.width || 0),
+		height: Math.max(bestLoad.height, clean.height || 0)
+	})) {
+		return {
+			...clean,
+			urls: JournalLens._uniqueURLs([bestLoad.url, ...clean.urls.filter(u => u !== bestLoad.url)]),
+			width: bestLoad.width,
+			height: bestLoad.height
+		};
+	}
+	return null;
+}
+
+async function validateFigures(figures, limit = 8) {
+	let out = [];
+	let seen = createFigureSeen();
+	for (let figure of dedupeFigures(figures)) {
+		let validated = await validateFigure(figure);
+		if (!validated) {
+			continue;
+		}
+		addFigure(out, seen, validated);
+		if (out.length >= limit) {
+			break;
+		}
+	}
+	return dedupeFigures(out).slice(0, limit);
 }
 
 async function loadFiguresForCard(card) {
@@ -1039,7 +1323,7 @@ async function loadFiguresForCard(card) {
 						+ article.pmcid + ": " + e);
 				}
 			}
-			if (!allFigures.length) {
+			if (article.url || article.doi || (article.fullTextLinks && article.fullTextLinks.length)) {
 				let fallback = await fetchPublisherVisuals(article);
 				let seen = createFigureSeen(allFigures);
 				for (let figure of fallback.figures || []) {
@@ -1062,7 +1346,7 @@ async function loadFiguresForCard(card) {
 
 	container.replaceChildren();
 
-	article.figures = dedupeFigures(article.figures);
+	article.figures = await validateFigures(article.figures, 8);
 	if (!article.figures || !article.figures.length) {
 		container.hidden = true;
 		return;
@@ -1093,7 +1377,7 @@ function setImageWithFallback(parent, figure) {
 			img.src = figure.urls[index];
 		}
 		else {
-			img.remove();
+			parent.remove();
 		}
 	});
 	img.src = figure.urls[0];

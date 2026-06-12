@@ -4,9 +4,9 @@
 
 # JournalLens
 
-**A Zotero plugin for following journals, scanning papers from the past month, viewing abstracts and figures, switching EN/中文, and saving papers to Zotero in one click.**
+**A Zotero plugin for following journals, scanning recent papers, viewing abstracts and validated body figures, switching EN/中文, and saving papers to Zotero in one click.**
 
-**JournalLens 是一个 Zotero 插件：在 Zotero 内关注期刊、浏览近一个月论文、查看摘要与图片、中英文切换，并一键保存到文献库。**
+**JournalLens 是一个 Zotero 插件：在 Zotero 内关注期刊、浏览近期论文、查看摘要与正文图片、中英文切换，并一键保存到文献库。**
 
 [Latest release](https://github.com/Lyz-623/JournalLens/releases/latest) · [Changelog](CHANGELOG.md) · [Support](DONATE.md)
 
@@ -28,10 +28,10 @@
 
 - Follow journals by name or ISSN through Crossref.
   通过期刊名或 ISSN 关注期刊。
-- Show papers published in the last 30 days by default, sorted across followed journals.
-  默认抓取近 30 天发表的论文，并按日期聚合排序。
-- Display title, authors, journal, date, abstract, OA badge, preview image and figure strip when available.
-  展示标题、作者、期刊、日期、摘要、OA 标识、预览图和可用正文图片。
+- Show papers published in the last 7 days by default, with a saved setting for 1-180 days.
+  默认抓取近 7 天发表的论文，可在设置中保存为 1-180 天。
+- Display title, authors, journal, date, abstract, OA badge and validated body / Extended Figure strip when available.
+  展示标题、作者、期刊、日期、摘要、OA 标识，以及可验证的正文图 / Extended Figure。
 - Translate titles and abstracts between English and Chinese.
   支持标题与摘要中英互译。
 - Filter out obvious non-research content such as news, corrections and editorials.
@@ -43,7 +43,7 @@
 
 ## Install / 安装
 
-1. Download `journallens-0.3.5.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest).
+1. Download `journallens-0.3.6.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest).
 2. Open Zotero → **Tools → Plugins**.
 3. Click the gear icon → **Install Plugin From File…** and choose the `.xpi`.
 
@@ -59,13 +59,15 @@
 
 ## Figure Loading / 图片说明
 
-JournalLens tries several sources for figures and previews:
+JournalLens tries several sources for article figures:
 
 - Europe PMC open-access full-text XML
 - Crossref full-text links
 - DOI and publisher article pages
 - Unpaywall open-access article pages
-- article-body or extended figure containers exposed in publisher HTML
+- article-body or Extended Figure containers exposed in publisher HTML
+
+Figures are displayed only when JournalLens can identify a real `Fig. N` or `Extended Fig. N` label and load a usable image. Preview images, TOC graphics, graphical abstracts and blank/low-quality thumbnails are filtered out.
 
 Figure extraction is best-effort. Some publishers block automated HTML access, hide figures behind scripts, or expose only paywalled PDFs, so not every article can show figures.
 
@@ -76,7 +78,7 @@ Figure extraction is best-effort. Some publishers block automated HTML access, h
 | Setting | Default |
 |---|---:|
 | Interface language / 界面语言 | Follow Zotero |
-| Days to fetch / 抓取最近天数 | 30 |
+| Days to fetch / 抓取最近天数 | 7 |
 | Max articles per journal / 每刊最多文章数 | 200 |
 | Cache duration / 缓存时长 | 60 min |
 | Translation service / 翻译服务 | Google |
@@ -95,6 +97,7 @@ The packaged plugin will be created at `build/journallens-<version>.xpi`.
 
 ## Version Notes / 版本记录
 
+- `0.3.6`: validated real `Fig. N` / `Extended Fig. N` labels, high-resolution figure candidates, blank/duplicate filtering, 7-day default fetch window with saved settings.
 - `0.3.5`: publisher-page abstract fallback, Crossref works fallback, body/extended figures only, `Fig. N` label normalization.
 - `0.3.4`: clears stale figure cache, stronger duplicate removal, caption width wrapping, centered previous/next figure controls.
 - `0.3.3`: in-feed title/abstract search, highlighted matches, deduplicated figures, zoomable figure lightbox with previous/next navigation.
