@@ -73,7 +73,7 @@ var JournalLens = {
 		this._feedWindow = win.openDialog(
 			"chrome://journallens/content/feed.xhtml",
 			"journallens-feed",
-			"chrome,resizable,centerscreen,dialog=no",
+			"chrome,resizable,centerscreen,dialog=no,width=1150,height=760",
 			{ Zotero, JournalLens: this }
 		);
 	},

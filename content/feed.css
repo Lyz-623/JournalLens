@@ -236,6 +236,8 @@ button:disabled { opacity: 0.5; cursor: default; }
 .card-actions { display: flex; gap: 8px; margin-top: 8px; }
 
 /* ---------- lightbox ---------- */
+#lightbox[hidden] { display: none; }
+
 #lightbox {
 	position: fixed;
 	inset: 0;
