@@ -216,6 +216,8 @@ async function loadFeed(force = false) {
 	}
 
 	articles.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+	// When showing several journals at once, drop cross-journal duplicates too
+	articles = JournalLens.dedupeArticles(articles);
 
 	if (failures) {
 		status.classList.add("error");

@@ -299,6 +299,30 @@ var JournalLens = {
 	 * Feed assembly with caching
 	 * ---------------------------------------------------------- */
 
+	/**
+	 * Collapse duplicate entries that point at the same paper. Some journals
+	 * (e.g. eLife reviewed preprints) publish several versioned DOIs with an
+	 * identical title; Crossref returns one record per version. Keep the first
+	 * occurrence, which — because the feed is sorted newest-first — is the most
+	 * recent version.
+	 */
+	dedupeArticles(articles) {
+		let seen = new Set();
+		let out = [];
+		for (let article of articles) {
+			let key = (article.title || "").toLowerCase().replace(/\s+/g, " ").trim()
+				|| article.doi;
+			if (key && seen.has(key)) {
+				continue;
+			}
+			if (key) {
+				seen.add(key);
+			}
+			out.push(article);
+		}
+		return out;
+	},
+
 	async getFeed(issn, { force = false } = {}) {
 		let cacheMinutes = parseInt(this.getPref("cacheMinutes")) || 60;
 		let cached = this._cache.get(issn);
@@ -306,7 +330,7 @@ var JournalLens = {
 			return cached.articles;
 		}
 		let rows = parseInt(this.getPref("articlesPerJournal")) || 20;
-		let articles = await this.fetchJournalFeed(issn, rows);
+		let articles = this.dedupeArticles(await this.fetchJournalFeed(issn, rows));
 		await this.enrichWithEuropePMC(articles);
 		this._cache.set(issn, { time: Date.now(), articles });
 		return articles;
