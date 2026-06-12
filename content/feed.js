@@ -28,7 +28,10 @@ function applyStaticLabels() {
 	document.getElementById("h-followed").textContent = S("followed");
 	document.getElementById("h-add").textContent = S("add-journal");
 	document.getElementById("journal-search-input").placeholder = S("search-ph");
-	document.getElementById("lang-select").value = JournalLens.getUILang();
+	document.getElementById("lang-option-auto").textContent = S("lang-auto");
+	document.getElementById("lang-option-en").textContent = S("lang-en");
+	document.getElementById("lang-option-zh").textContent = S("lang-zh");
+	document.getElementById("lang-select").value = JournalLens.getUILanguageMode();
 
 	// donate modal
 	document.getElementById("donate-title").textContent = S("donate-title");
@@ -251,8 +254,6 @@ function renderArticles(articles) {
 
 	resetFigureObserver();
 	for (let article of articles) {
-		// reset per-render translation display state
-		article._showTranslated = false;
 		cards.appendChild(buildCard(article));
 	}
 }
@@ -274,7 +275,6 @@ function buildCard(article) {
 	// title
 	let title = document.createElement("h3");
 	title.className = "card-title";
-	title.textContent = article.title;
 	title.addEventListener("click", () => Zotero.launchURL(article.url));
 	body.appendChild(title);
 
@@ -311,7 +311,6 @@ function buildCard(article) {
 	if (article.abstract) {
 		abstract = document.createElement("p");
 		abstract.className = "card-abstract clamped";
-		abstract.textContent = article.abstract;
 		body.appendChild(abstract);
 
 		let toggle = document.createElement("button");
@@ -325,7 +324,7 @@ function buildCard(article) {
 	}
 
 	// figures placeholder — populated lazily when the card scrolls into view
-	if (article.pmcid && article.isOpenAccess && JournalLens.getPref("loadFigures")) {
+	if (JournalLens.getPref("loadFigures") && (article.pmcid || article.url || article.doi)) {
 		let figures = document.createElement("div");
 		figures.className = "figures";
 		figures.hidden = true;
@@ -364,7 +363,7 @@ function buildCard(article) {
 
 	// translate toggle (title + abstract)
 	let translateBtn = document.createElement("button");
-	translateBtn.textContent = S("translate");
+	updateArticleText(article, title, abstract, translateBtn);
 	translateBtn.addEventListener("click", () =>
 		toggleTranslate(article, title, abstract, translateBtn));
 	actions.appendChild(translateBtn);
@@ -377,47 +376,62 @@ function buildCard(article) {
  * Translation (title + abstract, EN <-> 中文)
  * ---------------------------------------------------------- */
 
+function translationButtonLabel(article) {
+	if (article._showTranslated) {
+		return S("original");
+	}
+	let target = JournalLens.getTranslationTarget(article.title);
+	return S(target === "zh" ? "translate-to-zh" : "translate-to-en");
+}
+
+function updateArticleText(article, titleEl, absEl, btn) {
+	let target = article._translationTarget;
+	let translated = article._showTranslated && target
+		&& article._tx && article._tx[target];
+	titleEl.textContent = translated ? translated.title : article.title;
+	if (absEl) {
+		absEl.textContent = translated ? translated.abstract : article.abstract;
+	}
+	btn.textContent = translationButtonLabel(article);
+}
+
 async function toggleTranslate(article, titleEl, absEl, btn) {
 	if (article._showTranslated) {
-		titleEl.textContent = article.title;
-		if (absEl) {
-			absEl.textContent = article.abstract;
-		}
 		article._showTranslated = false;
-		btn.textContent = S("translate");
+		updateArticleText(article, titleEl, absEl, btn);
 		return;
 	}
 
-	let target = JournalLens.detectLang(article.title) === "zh" ? "en" : "zh";
+	let target = JournalLens.getTranslationTarget(article.title);
 	btn.disabled = true;
 	btn.textContent = S("translating");
 	try {
 		if (!article._tx) {
+			article._tx = {};
+		}
+		if (!article._tx[target]) {
 			let [tt, ta] = await Promise.all([
 				JournalLens.translateText(article.title, target),
 				article.abstract
 					? JournalLens.translateText(article.abstract, target)
 					: Promise.resolve("")
 			]);
-			article._tx = { title: tt, abstract: ta };
-		}
-		titleEl.textContent = article._tx.title;
-		if (absEl && article._tx.abstract) {
-			absEl.textContent = article._tx.abstract;
+			article._tx[target] = { title: tt, abstract: ta };
 		}
 		article._showTranslated = true;
-		btn.textContent = S("original");
+		article._translationTarget = target;
+		updateArticleText(article, titleEl, absEl, btn);
 	}
 	catch (e) {
 		Zotero.debug("JournalLens: translate failed: " + e);
 		window.alert(S("translate-failed"));
-		btn.textContent = S("translate");
+		updateArticleText(article, titleEl, absEl, btn);
 	}
 	btn.disabled = false;
 }
 
 /* ---------------------------------------------------------- *
- * Figures (lazy, only for OA articles with a PMCID)
+ * Figures (lazy: Europe PMC XML first, publisher/OA pages fallback)
  * ---------------------------------------------------------- */
 
 function resetFigureObserver() {
@@ -440,6 +454,7 @@ function parseFigures(xmlText, pmcid) {
 		&& (graphic.getAttributeNS("http://www.w3.org/1999/xlink", "href")
 			|| graphic.getAttribute("xlink:href")
 			|| graphic.getAttribute("href"));
+	let firstGraphic = (el) => el && el.querySelector("graphic, media");
 
 	// Graphical abstract / TOC graphic (preferred thumbnail)
 	let graphicalAbstract = null;
@@ -449,7 +464,7 @@ function parseFigures(xmlText, pmcid) {
 			|| fig.querySelector("caption")
 			|| {}).textContent || "";
 		if (type.includes("graphic") || /graphical abstract/i.test(labelText)) {
-			let href = graphicHref(fig.querySelector("graphic"));
+			let href = graphicHref(firstGraphic(fig));
 			if (href) {
 				graphicalAbstract = { label: "", caption: labelText.trim(),
 					urls: JournalLens.figureImageURLs(pmcid, href) };
@@ -458,7 +473,7 @@ function parseFigures(xmlText, pmcid) {
 		}
 	}
 	if (!graphicalAbstract) {
-		let absGraphic = doc.querySelector('abstract[abstract-type="graphical"] graphic');
+		let absGraphic = doc.querySelector('abstract[abstract-type="graphical"] graphic, abstract[abstract-type="graphical"] media');
 		let href = graphicHref(absGraphic);
 		if (href) {
 			graphicalAbstract = { label: "", caption: "",
@@ -473,7 +488,7 @@ function parseFigures(xmlText, pmcid) {
 		if (type.includes("graphic")) {
 			continue; // already captured as graphical abstract
 		}
-		let href = graphicHref(fig.querySelector("graphic"));
+		let href = graphicHref(firstGraphic(fig));
 		if (!href) {
 			continue;
 		}
@@ -484,6 +499,211 @@ function parseFigures(xmlText, pmcid) {
 			caption: caption ? caption.textContent.replace(/\s+/g, " ").trim() : "",
 			urls: JournalLens.figureImageURLs(pmcid, href)
 		});
+	}
+	return { graphicalAbstract, figures };
+}
+
+function cleanText(text) {
+	return (text || "").replace(/\s+/g, " ").trim();
+}
+
+function imageFromSrcset(srcset) {
+	if (!srcset) {
+		return "";
+	}
+	let best = "";
+	let bestWidth = 0;
+	for (let part of srcset.split(",")) {
+		let pieces = part.trim().split(/\s+/);
+		let url = pieces[0];
+		let width = 0;
+		for (let p of pieces.slice(1)) {
+			let m = p.match(/^(\d+)w$/);
+			if (m) {
+				width = parseInt(m[1]);
+			}
+		}
+		if (!best || width > bestWidth) {
+			best = url;
+			bestWidth = width;
+		}
+	}
+	return best;
+}
+
+function imageURLFromElement(img, baseURL) {
+	let attrs = [
+		"src", "data-src", "data-original", "data-lazy-src", "data-image",
+		"data-large", "data-full", "data-hires", "data-download-url"
+	];
+	for (let attr of attrs) {
+		let url = JournalLens._resolveURL(baseURL, img.getAttribute(attr));
+		if (url) {
+			return url;
+		}
+	}
+	return JournalLens._resolveURL(baseURL, imageFromSrcset(img.getAttribute("srcset")));
+}
+
+function isUsefulImageURL(url) {
+	if (!url || /^data:/i.test(url)) {
+		return false;
+	}
+	if (/\.(svg|ico)([?#].*)?$/i.test(url)) {
+		return false;
+	}
+	if (/(logo|icon|avatar|profile|sprite|spinner|loader|pixel|tracking|advert|banner|social|share|facebook|twitter|wechat|weibo)/i.test(url)) {
+		return false;
+	}
+	return true;
+}
+
+function figureFromURL(url, label, caption) {
+	return {
+		label: cleanText(label),
+		caption: cleanText(caption),
+		urls: [url]
+	};
+}
+
+function addFigure(list, seen, figure) {
+	let url = figure && figure.urls && figure.urls[0];
+	if (!isUsefulImageURL(url) || seen.has(url)) {
+		return;
+	}
+	seen.add(url);
+	list.push(figure);
+}
+
+function parseJSONLDImages(doc, baseURL, seen) {
+	let figures = [];
+	for (let script of doc.querySelectorAll('script[type="application/ld+json"]')) {
+		let raw = script.textContent;
+		if (!raw || !raw.trim()) {
+			continue;
+		}
+		try {
+			let data = JSON.parse(raw);
+			let nodes = Array.isArray(data) ? data : [data];
+			for (let node of nodes.slice()) {
+				if (node && Array.isArray(node["@graph"])) {
+					nodes.push(...node["@graph"]);
+				}
+			}
+			for (let node of nodes) {
+				let image = node.image;
+				let candidates = [];
+				if (typeof image === "string") {
+					candidates.push(image);
+				}
+				else if (Array.isArray(image)) {
+					for (let item of image) {
+						candidates.push(typeof item === "string" ? item : item && item.url);
+					}
+				}
+				else if (image && image.url) {
+					candidates.push(image.url);
+				}
+				for (let value of candidates) {
+					let url = JournalLens._resolveURL(baseURL, value);
+					addFigure(figures, seen, figureFromURL(url, "Preview", "Structured article image"));
+				}
+			}
+		}
+		catch (e) {
+			// Ignore malformed JSON-LD blocks from publisher pages.
+		}
+	}
+	return figures;
+}
+
+function parseHTMLVisuals(htmlText, baseURL) {
+	let doc = new DOMParser().parseFromString(htmlText, "text/html");
+	let seen = new Set();
+	let figures = [];
+	let graphicalAbstract = null;
+
+	let metaSelectors = [
+		'meta[name="citation_graphical_abstract"]',
+		'meta[name="citation_image"]',
+		'meta[property="og:image"]',
+		'meta[name="twitter:image"]',
+		'meta[name="thumbnail"]'
+	];
+	for (let selector of metaSelectors) {
+		let meta = doc.querySelector(selector);
+		let url = meta && JournalLens._resolveURL(baseURL, meta.getAttribute("content"));
+		if (isUsefulImageURL(url)) {
+			graphicalAbstract = figureFromURL(url, "Preview", "Publisher page preview image");
+			seen.add(url);
+			break;
+		}
+	}
+
+	for (let f of parseJSONLDImages(doc, baseURL, seen)) {
+		if (!graphicalAbstract) {
+			graphicalAbstract = f;
+		}
+		else {
+			figures.push(f);
+		}
+	}
+
+	for (let fig of doc.querySelectorAll("figure")) {
+		let img = fig.querySelector("img");
+		let url = img && imageURLFromElement(img, baseURL);
+		if (!isUsefulImageURL(url)) {
+			continue;
+		}
+		let label = cleanText(
+			(fig.querySelector(".label, .figure-label, [class*='label']") || {}).textContent
+		) || cleanText(img.getAttribute("alt")) || "Figure";
+		let caption = cleanText(
+			(fig.querySelector("figcaption, .caption, [class*='caption']") || {}).textContent
+		) || cleanText(img.getAttribute("title") || img.getAttribute("alt"));
+		addFigure(figures, seen, figureFromURL(url, label, caption));
+	}
+
+	for (let img of doc.querySelectorAll("img")) {
+		if (figures.length >= 8) {
+			break;
+		}
+		let alt = cleanText(img.getAttribute("alt") || img.getAttribute("title"));
+		let url = imageURLFromElement(img, baseURL);
+		let semantic = /(fig(?:ure)?\.?\s*\d*|graphical|abstract|toc|scheme|diagram|chart|plot)/i
+			.test([url, alt, img.className || "", img.id || ""].join(" "));
+		if (!semantic || !isUsefulImageURL(url)) {
+			continue;
+		}
+		addFigure(figures, seen, figureFromURL(url, alt || "Figure", alt));
+	}
+
+	return { graphicalAbstract, figures };
+}
+
+async function fetchPublisherVisuals(article) {
+	let graphicalAbstract = null;
+	let figures = [];
+	let seen = new Set();
+	let pages = await JournalLens.getVisualSourcePages(article);
+	for (let url of pages) {
+		try {
+			let page = await JournalLens.fetchArticleHTML(url);
+			let parsed = parseHTMLVisuals(page.text, page.url || url);
+			if (!graphicalAbstract && parsed.graphicalAbstract) {
+				graphicalAbstract = parsed.graphicalAbstract;
+				seen.add(graphicalAbstract.urls[0]);
+			}
+			for (let figure of parsed.figures || []) {
+				addFigure(figures, seen, figure);
+			}
+			if (graphicalAbstract && figures.length >= 6) {
+				break;
+			}
+		}
+		catch (e) {
+			Zotero.debug("JournalLens: publisher visuals failed for " + url + ": " + e);
+		}
 	}
 	return { graphicalAbstract, figures };
 }
@@ -499,14 +719,34 @@ async function loadFiguresForCard(card) {
 
 	try {
 		if (article.figures === null) {
-			let xml = await JournalLens.fetchFullTextXML(article.pmcid);
-			let parsed = parseFigures(xml, article.pmcid);
-			article.figures = parsed.figures;
-			article.graphicalAbstract = parsed.graphicalAbstract;
+			let allFigures = [];
+			let graphicalAbstract = null;
+			if (article.pmcid) {
+				try {
+					let xml = await JournalLens.fetchFullTextXML(article.pmcid);
+					let parsed = parseFigures(xml, article.pmcid);
+					allFigures = parsed.figures || [];
+					graphicalAbstract = parsed.graphicalAbstract;
+				}
+				catch (e) {
+					Zotero.debug("JournalLens: Europe PMC figures failed for "
+						+ article.pmcid + ": " + e);
+				}
+			}
+			if (!graphicalAbstract || !allFigures.length) {
+				let fallback = await fetchPublisherVisuals(article);
+				graphicalAbstract = graphicalAbstract || fallback.graphicalAbstract;
+				let seen = new Set(allFigures.map(f => f.urls && f.urls[0]).filter(Boolean));
+				for (let figure of fallback.figures || []) {
+					addFigure(allFigures, seen, figure);
+				}
+			}
+			article.figures = allFigures;
+			article.graphicalAbstract = graphicalAbstract;
 		}
 	}
 	catch (e) {
-		Zotero.debug("JournalLens: figures failed for " + article.pmcid + ": " + e);
+		Zotero.debug("JournalLens: figures failed for " + (article.doi || article.url) + ": " + e);
 		article.figures = [];
 	}
 

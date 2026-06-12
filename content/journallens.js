@@ -9,6 +9,8 @@
  *  - Crossref REST API: latest works per journal (by ISSN), all disciplines.
  *  - Europe PMC REST API: abstracts, publication types (for filtering),
  *    open-access flags and, for OA articles, full-text figures with captions.
+ *  - Publisher / OA landing pages: graphical abstracts, social preview images
+ *    and figure thumbnails when structured full-text XML is unavailable.
  *  - Translation: Google (keyless gtx endpoint) with a MyMemory fallback.
  */
 var JournalLens = {
@@ -56,6 +58,11 @@ var JournalLens = {
 			"translate-failed": "Translation failed. Please try again later.",
 			"oa": "OA",
 			"lang-label": "Language",
+			"lang-auto": "Follow Zotero",
+			"lang-en": "English",
+			"lang-zh": "中文",
+			"translate-to-en": "Translate to EN",
+			"translate-to-zh": "Translate to 中文",
 			"close": "Close",
 			"donate-title": "Support JournalLens ♥",
 			"donate-intro": "JournalLens is free and open source. If it saves you time, a small tip keeps the updates coming!",
@@ -93,6 +100,11 @@ var JournalLens = {
 			"translate-failed": "翻译失败,请稍后重试。",
 			"oa": "OA",
 			"lang-label": "语言",
+			"lang-auto": "跟随 Zotero",
+			"lang-en": "English",
+			"lang-zh": "中文",
+			"translate-to-en": "翻译为英文",
+			"translate-to-zh": "翻译为中文",
 			"close": "关闭",
 			"donate-title": "打赏支持 JournalLens ♥",
 			"donate-intro": "JournalLens 完全免费开源。如果它帮你节省了时间,欢迎打赏支持,你的支持是持续更新的最大动力!",
@@ -139,12 +151,17 @@ var JournalLens = {
 	 * ---------------------------------------------------------- */
 
 	getUILang() {
-		let pref = this.getPref("uiLanguage") || "auto";
+		let pref = this.getUILanguageMode();
 		if (pref === "en" || pref === "zh") {
 			return pref;
 		}
 		let locale = (Zotero.locale || "en").toLowerCase();
 		return locale.startsWith("zh") ? "zh" : "en";
+	},
+
+	getUILanguageMode() {
+		let pref = this.getPref("uiLanguage") || "auto";
+		return ["auto", "en", "zh"].includes(pref) ? pref : "auto";
 	},
 
 	getString(id) {
@@ -292,9 +309,50 @@ var JournalLens = {
 		return JSON.parse(xhr.responseText);
 	},
 
-	async _getText(url) {
-		let xhr = await Zotero.HTTP.request("GET", url, { timeout: 30000 });
+	async _getText(url, options = {}) {
+		let xhr = await Zotero.HTTP.request("GET", url, {
+			headers: options.headers || {},
+			timeout: options.timeout || 30000
+		});
 		return xhr.responseText;
+	},
+
+	async _getHTML(url) {
+		let xhr = await Zotero.HTTP.request("GET", url, {
+			headers: {
+				Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+			},
+			timeout: 15000
+		});
+		return {
+			text: xhr.responseText,
+			url: xhr.responseURL || url
+		};
+	},
+
+	_resolveURL(base, value) {
+		if (!value || /^data:/i.test(value)) {
+			return "";
+		}
+		try {
+			return new URL(value.replace(/&amp;/g, "&"), base).href;
+		}
+		catch (e) {
+			return "";
+		}
+	},
+
+	_uniqueURLs(urls) {
+		let seen = new Set();
+		let out = [];
+		for (let url of urls) {
+			if (!url || seen.has(url)) {
+				continue;
+			}
+			seen.add(url);
+			out.push(url);
+		}
+		return out;
 	},
 
 	/* ---------------------------------------------------------- *
@@ -462,6 +520,56 @@ var JournalLens = {
 		return articles;
 	},
 
+	async fetchUnpaywall(doi) {
+		if (!doi) {
+			return null;
+		}
+		let url = "https://api.unpaywall.org/v2/" + encodeURIComponent(doi)
+			+ "?email=" + encodeURIComponent(this.CROSSREF_MAILTO);
+		try {
+			return await this._getJSON(url);
+		}
+		catch (e) {
+			Zotero.debug("JournalLens: Unpaywall lookup failed for " + doi + ": " + e);
+			return null;
+		}
+	},
+
+	async getVisualSourcePages(article) {
+		let urls = [];
+		if (article.url) {
+			urls.push(article.url);
+		}
+		if (article.doi) {
+			urls.push("https://doi.org/" + article.doi);
+		}
+
+		if (article.doi && article._unpaywall === undefined) {
+			article._unpaywall = await this.fetchUnpaywall(article.doi);
+		}
+		let oa = article._unpaywall;
+		if (oa) {
+			if (oa.best_oa_location) {
+				urls.push(oa.best_oa_location.url_for_landing_page);
+				urls.push(oa.best_oa_location.url);
+			}
+			for (let loc of oa.oa_locations || []) {
+				urls.push(loc.url_for_landing_page);
+				urls.push(loc.url);
+			}
+			if (oa.is_oa) {
+				article.isOpenAccess = true;
+			}
+		}
+		return this._uniqueURLs(urls)
+			.filter(url => !/\.(pdf|zip|docx?|pptx?)([?#].*)?$/i.test(url))
+			.slice(0, 5);
+	},
+
+	async fetchArticleHTML(url) {
+		return this._getHTML(url);
+	},
+
 	/* ---------------------------------------------------------- *
 	 * Filtering
 	 * ---------------------------------------------------------- */
@@ -541,7 +649,7 @@ var JournalLens = {
 	},
 
 	/* ---------------------------------------------------------- *
-	 * Full-text figures (lazy, OA articles only)
+	 * Full-text figures (lazy, OA articles preferred)
 	 * ---------------------------------------------------------- */
 
 	async fetchFullTextXML(pmcid) {
@@ -551,11 +659,18 @@ var JournalLens = {
 	},
 
 	figureImageURLs(pmcid, graphicHref) {
-		let name = graphicHref.replace(/\.(jpg|jpeg|png|gif|tif|tiff)$/i, "");
-		return [
-			"https://europepmc.org/articles/" + pmcid + "/bin/" + name + ".jpg",
-			"https://www.ncbi.nlm.nih.gov/pmc/articles/" + pmcid + "/bin/" + name + ".jpg"
-		];
+		let clean = String(graphicHref || "").replace(/^.*\//, "");
+		let stem = clean.replace(/\.(jpg|jpeg|png|gif|webp|tif|tiff)$/i, "");
+		let variants = [clean, stem + ".jpg", stem + ".png", stem + ".jpeg", stem + ".gif"];
+		let urls = [];
+		for (let name of variants) {
+			if (!name) {
+				continue;
+			}
+			urls.push("https://europepmc.org/articles/" + pmcid + "/bin/" + name);
+			urls.push("https://www.ncbi.nlm.nih.gov/pmc/articles/" + pmcid + "/bin/" + name);
+		}
+		return this._uniqueURLs(urls);
 	},
 
 	/* ---------------------------------------------------------- *
@@ -564,6 +679,15 @@ var JournalLens = {
 
 	detectLang(text) {
 		return /[一-鿿]/.test(text || "") ? "zh" : "en";
+	},
+
+	getTranslationTarget(text) {
+		let src = this.detectLang(text);
+		let ui = this.getUILang();
+		if (src !== ui) {
+			return ui;
+		}
+		return src === "zh" ? "en" : "zh";
 	},
 
 	async translateText(text, target) {

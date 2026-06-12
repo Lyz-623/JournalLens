@@ -58,9 +58,9 @@ Keeping up with new papers means opening a dozen journal websites, squinting at 
 | 🗞️ | **Past-month feed** | Shows papers published in the **past 30 days** per journal (configurable). Merged across journals and sorted by date. |
 | 🔬 | **Research only** | Hides news, editorials, comments, perspectives, corrections & errata. Keeps articles, reviews, letters, correspondence, protocols. |
 | 📄 | **Full abstracts** | Expandable abstract on every card (Crossref + Europe PMC). |
-| 🖼️ | **Smart thumbnails** | Prefers the paper's **graphical abstract / TOC** image, falling back to **Figure 1**. |
-| 📊 | **Main figures + captions** | A scrollable strip of the paper's main figures; click any to view full-size with its complete caption. |
-| 🌐 | **EN ⇄ 中文 translation** | Translate any title & abstract with one click (Google, MyMemory fallback). |
+| 🖼️ | **Smart thumbnails** | Prefers the paper's **graphical abstract / TOC** image, then full-text figures, publisher preview images, or OA landing-page images. |
+| 📊 | **Main figures + captions** | A scrollable strip of figures from Europe PMC XML when available, with publisher-page image fallback; click any to view full-size with its caption. |
+| 🌐 | **EN ⇄ 中文 translation** | Translate any title & abstract with one click; targets the current UI language when useful (Google, MyMemory fallback). |
 | 🪟 | **Bilingual interface** | Switch the whole UI between English and 中文 anytime, from the top bar. |
 | 🟢 | **Open-Access badges** | Instantly see which papers are freely readable. |
 | ➕ | **One-click import** | Add any paper to Zotero by DOI, with full metadata. |
@@ -74,9 +74,9 @@ Keeping up with new papers means opening a dozen journal websites, squinting at 
 - **近一个月速览** — 默认显示各期刊**近 30 天**发表的论文(可调),跨期刊聚合并按日期排序。
 - **只看研究内容** — 自动隐藏新闻稿、社论、评论、Perspective、更正等,保留 Article / Review / Letter / Correspondence / Protocol。
 - **完整摘要** — 每张卡片可展开阅读摘要。
-- **智能缩略图** — 优先使用论文的**图文摘要 / TOC** 图,没有则用 **Figure 1**。
-- **正文主图 + 图注** — 可横向滚动的主图条,点击任意图片放大查看完整图注。
-- **中英互译** — 一键翻译标题与摘要(Google,自动回退 MyMemory)。
+- **智能缩略图** — 优先使用论文的**图文摘要 / TOC** 图,再回退到正文图、出版商预览图或 OA 页面图片。
+- **正文主图 + 图注** — 可横向滚动的主图条,优先来自 Europe PMC XML,并增加出版商页面图片兜底;点击任意图片放大查看图注。
+- **中英互译** — 一键翻译标题与摘要,会优先翻译到当前界面语言(Google,自动回退 MyMemory)。
 - **双语界面** — 顶栏随时切换中文 / English。
 - **OA 标识、一键导入、工具栏快速打开、内置打赏、深色模式**。
 
@@ -139,12 +139,12 @@ Open **Zotero Settings → JournalLens** (Zotero 设置 → JournalLens):
 |------|--------|
 | Recent articles per journal | [Crossref REST API](https://api.crossref.org) (all disciplines, filtered by publication date) |
 | Abstracts, publication type & Open-Access status | [Europe PMC REST API](https://europepmc.org/RestfulWebService) |
-| Graphical-abstract / figures & captions | Europe PMC open-access full text (JATS XML) |
+| Graphical-abstract / figures & captions | Europe PMC open-access full text (JATS XML), publisher pages, DOI landing pages, Unpaywall OA landing pages |
 | Title / abstract translation | Google translate (keyless) with a MyMemory fallback |
 
-- **Figures & rich thumbnails** are available for **open-access articles indexed in Europe PMC** (most biomedical and many life-science journals). For paywalled articles, JournalLens still shows title, authors, date and abstract where available, with the journal initials as a placeholder thumbnail.
+- **Figures & rich thumbnails** are best for **open-access articles indexed in Europe PMC** (most biomedical and many life-science journals). When XML figures are unavailable, JournalLens now falls back to publisher/DOI/OA landing pages and tries high-confidence preview or figure images.
 - **Translation in China**: the default is Google; if it's unreachable, switch the translation service to **MyMemory** in settings.
-- 正文图片与缩略图来自 Europe PMC 收录的**开放获取**文章;付费墙文章会显示标题、作者、日期与摘要(若可得)。翻译默认 Google,若无法访问可在设置切换 **MyMemory**。
+- 正文图片与缩略图优先来自 Europe PMC 收录的**开放获取**文章;没有 XML 图片时会继续尝试出版商页面、DOI 页面和 Unpaywall OA 页面中的高置信图片。翻译默认 Google,若无法访问可在设置切换 **MyMemory**。
 
 ---
 
@@ -188,6 +188,9 @@ updates.json           Auto-update manifest
 ## 📜 Changelog / 版本记录
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
+
+### v0.3.1 — 2026-06-13
+Fixes UI language switching and per-card translation cache · adds Auto/Follow Zotero language mode in the feed window · expands figure extraction with publisher, DOI and Unpaywall landing-page fallbacks.
 
 ### v0.3.0 — 2026-06-13
 Past-month feed by publication date · default per-journal fetch cap increased to 200 · payment QR images refreshed from local JPG files · README and visual docs updated.

@@ -8,6 +8,25 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.1] — 2026-06-13
+
+Language and figure-extraction patch.
+
+### Fixed / 修复
+- Fixed feed-window language switching so the dropdown can follow Zotero again
+  and dynamic labels refresh consistently. 修复中英文界面切换和“跟随 Zotero”模式。
+- Fixed per-card translation caching; translations are now cached per target
+  language instead of reusing one stale result. 修复单篇中英互译缓存错用的问题。
+
+### Changed / 变更
+- Figure loading now tries Europe PMC XML first, then falls back to publisher
+  pages, DOI landing pages and Unpaywall OA landing pages for graphical
+  abstracts, social preview images and high-confidence figure images. 增加出版商页面和 OA 页面图片兜底。
+- Cards can now attempt visual enrichment even when an article has no PMCID.
+  没有 PMCID 的文章也会尝试抓取预览图。
+
+---
+
 ## [0.3.0] — 2026-06-13
 
 Recent-feed update.
@@ -69,6 +88,7 @@ Initial release.
 - Bilingual (en-US / zh-CN) Fluent localisation, light/dark theme. 中英双语、深色模式。
 - Preferences pane, XPI build script, auto-update manifest. 偏好设置、打包脚本、自动更新清单。
 
+[0.3.1]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.1.0

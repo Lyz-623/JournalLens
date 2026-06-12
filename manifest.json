@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "JournalLens",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "Follow your favorite journals inside Zotero: browse articles from the past month with abstracts, figure thumbnails and captions, EN/中文 translation, and add them to your library in one click.",
 	"author": "yunze",
 	"homepage_url": "https://github.com/Lyz-623/JournalLens",
