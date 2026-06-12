@@ -19,6 +19,7 @@ var JournalLens = {
 	rootURI: null,
 
 	PREF_BRANCH: "extensions.journallens.",
+	CACHE_SCHEMA: "figures-v4",
 	CROSSREF_MAILTO: "yunze623@gmail.com",
 	HOMEPAGE_URL: "https://github.com/Lyz-623/JournalLens",
 	DONATE_URL: "https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md",
@@ -137,6 +138,10 @@ var JournalLens = {
 		this.id = id;
 		this.version = version;
 		this.rootURI = rootURI;
+		if (this.getPref("cacheSchema") !== this.CACHE_SCHEMA) {
+			this._cache.clear();
+			this.setPref("cacheSchema", this.CACHE_SCHEMA);
+		}
 	},
 
 	shutdown() {
@@ -299,6 +304,10 @@ var JournalLens = {
 		this.saveJournals(journals);
 		this._cache.delete(issn);
 		return journals;
+	},
+
+	clearCache() {
+		this._cache.clear();
 	},
 
 	/* ---------------------------------------------------------- *
@@ -639,6 +648,9 @@ var JournalLens = {
 	},
 
 	async getFeed(issn, { force = false } = {}) {
+		if (force) {
+			this._cache.delete(issn);
+		}
 		let cacheMinutes = parseInt(this.getPref("cacheMinutes")) || 60;
 		let cached = this._cache.get(issn);
 		if (!force && cached && (Date.now() - cached.time) < cacheMinutes * 60000) {

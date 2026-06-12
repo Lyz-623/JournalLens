@@ -204,6 +204,9 @@ async function loadFeed(force = false) {
 	let status = document.getElementById("status");
 	cards.replaceChildren();
 	State.articles = [];
+	if (force && JournalLens.clearCache) {
+		JournalLens.clearCache();
+	}
 
 	if (!State.journals.length) {
 		let empty = document.createElement("div");
@@ -605,6 +608,15 @@ function splitFigureLabel(text) {
 	return { label: value, caption: "" };
 }
 
+function captionWithoutLabel(label, caption) {
+	let l = cleanText(label);
+	let c = cleanText(caption);
+	if (!l) {
+		return c;
+	}
+	return stripCaptionLabel(l, c);
+}
+
 function stripCaptionLabel(label, caption) {
 	let l = cleanText(label);
 	let c = cleanText(caption);
@@ -657,9 +669,17 @@ function figureURLKey(url) {
 		let u = new URL(url);
 		u.hash = "";
 		u.search = "";
-		return (u.hostname + u.pathname).toLowerCase()
+		let path = decodeURIComponent(u.pathname).toLowerCase()
 			.replace(/\.(jpg|jpeg|png|gif|webp|tif|tiff)$/i, "")
-			.replace(/[-_](small|medium|large|full|hires|highres|zoom|thumbnail|thumb)$/i, "");
+			.replace(/[@._-](\d+x\d+|\d+w|small|medium|large|full|hires|highres|zoom|thumbnail|thumb|lowres|original)$/i, "")
+			.replace(/([._-])(full|large|medium|small|thumb|thumbnail|hires|highres)([._-])/gi, "$1$3")
+			.replace(/\/(full|large|medium|small|thumb|thumbnail|hires|highres)\//gi, "/");
+		let file = path.split("/").pop() || path;
+		let figureToken = file.match(/(?:fig(?:ure)?|f|gr|graphic|image|plate)[._-]?0*([1-9]\d*)([a-z])?/i);
+		if (figureToken) {
+			return u.hostname.toLowerCase() + "::fig" + figureToken[1] + (figureToken[2] || "");
+		}
+		return u.hostname.toLowerCase() + path;
 	}
 	catch (e) {
 		return String(url || "").split(/[?#]/)[0].toLowerCase();
@@ -671,11 +691,24 @@ function figureTextKey(figure) {
 	if (!clean) {
 		return "";
 	}
-	return normalizeFigureText([clean.label, clean.caption].filter(Boolean).join(" "));
+	let caption = captionWithoutLabel(clean.label, clean.caption);
+	let text = caption || clean.label;
+	return normalizeFigureText(text);
+}
+
+function figureNumberKey(figure) {
+	let clean = cleanFigure(figure);
+	if (!clean) {
+		return "";
+	}
+	let labelMatch = clean.label.match(/^(?:fig(?:ure)?\.?\s*)?([1-9]\d*)([a-z])?$/i);
+	let text = [clean.label, clean.caption].filter(Boolean).join(" ");
+	let match = labelMatch || text.match(/\bfig(?:ure)?\.?\s*([1-9]\d*)([a-z])?\b/i);
+	return match ? "fig" + match[1] + (match[2] || "").toLowerCase() : "";
 }
 
 function createFigureSeen(seedFigures = []) {
-	let seen = { urls: new Set(), captions: new Set() };
+	let seen = { urls: new Set(), captions: new Set(), numbers: new Set() };
 	for (let figure of seedFigures) {
 		let clean = cleanFigure(figure);
 		if (!clean) {
@@ -687,6 +720,10 @@ function createFigureSeen(seedFigures = []) {
 		let textKey = figureTextKey(clean);
 		if (textKey && textKey.length > 12) {
 			seen.captions.add(textKey);
+		}
+		let numberKey = figureNumberKey(clean);
+		if (numberKey) {
+			seen.numbers.add(numberKey);
 		}
 	}
 	return seen;
@@ -789,11 +826,19 @@ function addFigure(list, seen, figure) {
 	if (textKey && textKey.length > 12 && seen.captions.has(textKey)) {
 		return;
 	}
+	let numberKey = figureNumberKey(clean);
+	if (numberKey && seen.numbers.has(numberKey)
+		&& (!textKey || textKey.length < 36 || seen.captions.has(textKey))) {
+		return;
+	}
 	for (let key of urlKeys) {
 		seen.urls.add(key);
 	}
 	if (textKey && textKey.length > 12) {
 		seen.captions.add(textKey);
+	}
+	if (numberKey) {
+		seen.numbers.add(numberKey);
 	}
 	list.push(clean);
 }
@@ -1145,6 +1190,7 @@ function updateLightboxTransform() {
 	img.classList.toggle("zoomed", zoom > 1.01);
 	document.getElementById("lightbox-zoom-reset").textContent =
 		Math.round(zoom * 100) + "%";
+	updateLightboxGeometry();
 }
 
 function setLightboxZoom(zoom) {
@@ -1164,6 +1210,7 @@ function resetLightboxView() {
 }
 
 function renderLightboxFigure() {
+	let stage = document.getElementById("lightbox-stage");
 	let img = document.getElementById("lightbox-img");
 	let caption = document.getElementById("lightbox-caption");
 	let figure = State.lightboxFigures[State.lightboxIndex];
@@ -1177,6 +1224,7 @@ function renderLightboxFigure() {
 			img.src = figure.urls[index];
 		}
 	};
+	img.onload = updateLightboxGeometry;
 	img.src = figure.urls[0];
 	caption.textContent = figureCaptionText(figure);
 	resetLightboxView();
@@ -1184,6 +1232,35 @@ function renderLightboxFigure() {
 	document.getElementById("lightbox-next").disabled = State.lightboxFigures.length < 2;
 	document.getElementById("lightbox-nav-prev").hidden = State.lightboxFigures.length < 2;
 	document.getElementById("lightbox-nav-next").hidden = State.lightboxFigures.length < 2;
+	window.requestAnimationFrame(() => {
+		updateLightboxGeometry();
+		stage.scrollTop = 0;
+	});
+}
+
+function updateLightboxGeometry() {
+	let stage = document.getElementById("lightbox-stage");
+	let img = document.getElementById("lightbox-img");
+	let caption = document.getElementById("lightbox-caption");
+	if (!stage || !img || !caption || !img.complete) {
+		return;
+	}
+	let stageRect = stage.getBoundingClientRect();
+	let imgRect = img.getBoundingClientRect();
+	if (!stageRect.width || !imgRect.width) {
+		return;
+	}
+	let visibleLeft = Math.max(imgRect.left, stageRect.left);
+	let visibleRight = Math.min(imgRect.right, stageRect.right);
+	let visibleTop = Math.max(imgRect.top, stageRect.top);
+	let visibleBottom = Math.min(imgRect.bottom, stageRect.bottom);
+	let visibleWidth = Math.max(260, visibleRight - visibleLeft);
+	let centerY = Math.max(36, Math.min(stageRect.height - 36,
+		((visibleTop + visibleBottom) / 2) - stageRect.top));
+	stage.style.setProperty("--nav-top", centerY + "px");
+	stage.style.setProperty("--nav-left", Math.max(8, visibleLeft - stageRect.left + 8) + "px");
+	stage.style.setProperty("--nav-right", Math.max(8, stageRect.right - visibleRight + 8) + "px");
+	caption.style.setProperty("--caption-width", Math.round(Math.min(visibleWidth, stageRect.width)) + "px");
 }
 
 function openLightbox(figures, index = 0) {

@@ -328,7 +328,9 @@ mark.article-match {
 	flex-direction: column;
 	gap: 10px;
 }
+#lightbox-inner { align-items: center; }
 #lightbox-toolbar {
+	align-self: stretch;
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
@@ -340,9 +342,11 @@ mark.article-match {
 	min-height: 30px;
 	padding: 4px 8px;
 }
+#lightbox-prev, #lightbox-next { display: none; }
 #lightbox-zoom-reset { min-width: 58px; color: var(--text-soft); }
 #lightbox-stage {
 	position: relative;
+	width: 100%;
 	height: min(68vh, 680px);
 	overflow: hidden;
 	display: flex;
@@ -369,7 +373,7 @@ mark.article-match {
 #lightbox-img.dragging { cursor: grabbing; }
 .lightbox-nav {
 	position: absolute;
-	top: 50%;
+	top: var(--nav-top, 50%);
 	transform: translateY(-50%);
 	z-index: 2;
 	width: 40px;
@@ -380,10 +384,20 @@ mark.article-match {
 	color: var(--text);
 	font-size: 28px;
 }
-#lightbox-nav-prev { left: 8px; }
-#lightbox-nav-next { right: 8px; }
+#lightbox-nav-prev { left: var(--nav-left, 8px); }
+#lightbox-nav-next { right: var(--nav-right, 8px); }
 .lightbox-nav:hover { background: var(--panel); color: var(--accent); }
-#lightbox-caption { overflow-y: auto; max-height: 20vh; line-height: 1.5; color: var(--text); }
+#lightbox-caption {
+	overflow-y: auto;
+	overflow-wrap: anywhere;
+	white-space: normal;
+	max-height: 20vh;
+	line-height: 1.5;
+	color: var(--text);
+	width: min(var(--caption-width, 760px), 100%);
+	max-width: 100%;
+	align-self: center;
+}
 #lightbox-close {
 	border: none;
 	background: none;

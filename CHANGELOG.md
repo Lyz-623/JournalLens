@@ -8,6 +8,22 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.4] — 2026-06-13
+
+Figure cleanup patch.
+
+### Fixed / 修复
+- Added a figure-cache schema bump and explicit refresh cache clearing so stale
+  figure lists are discarded. 增加 Figure 缓存版本并在刷新时清理旧缓存。
+- Strengthened figure deduplication with normalized URLs, caption-only keys and
+  figure-number keys. 进一步按图片地址、图注和 Figure 编号去重。
+- Made figure captions wrap to the displayed image width in the lightbox.
+  灯箱图注会按图片显示宽度自动换行。
+- Repositioned previous/next figure buttons to the vertical center of the
+  displayed image and removed the extra toolbar arrows. 左右切换按钮改到图片中线位置。
+
+---
+
 ## [0.3.3] — 2026-06-13
 
 Figure and in-feed search patch.
@@ -131,6 +147,7 @@ Initial release.
 - Bilingual (en-US / zh-CN) Fluent localisation, light/dark theme. 中英双语、深色模式。
 - Preferences pane, XPI build script, auto-update manifest. 偏好设置、打包脚本、自动更新清单。
 
+[0.3.4]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.4
 [0.3.3]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.3
 [0.3.2]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.2
 [0.3.1]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.1

@@ -43,7 +43,7 @@
 
 ## Install / 安装
 
-1. Download `journallens-0.3.3.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest).
+1. Download `journallens-0.3.4.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest).
 2. Open Zotero → **Tools → Plugins**.
 3. Click the gear icon → **Install Plugin From File…** and choose the `.xpi`.
 
@@ -95,6 +95,7 @@ The packaged plugin will be created at `build/journallens-<version>.xpi`.
 
 ## Version Notes / 版本记录
 
+- `0.3.4`: clears stale figure cache, stronger duplicate removal, caption width wrapping, centered previous/next figure controls.
 - `0.3.3`: in-feed title/abstract search, highlighted matches, deduplicated figures, zoomable figure lightbox with previous/next navigation.
 - `0.3.2`: UI polish, fixed language switching, fixed settings pane, lens + J toolbar icon, stronger figure parsing.
 - `0.3.1`: fixed translation cache and added publisher/DOI/Unpaywall visual fallbacks.
