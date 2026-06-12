@@ -31,7 +31,7 @@ function applyStaticLabels() {
 	document.getElementById("lang-option-auto").textContent = S("lang-auto");
 	document.getElementById("lang-option-en").textContent = S("lang-en");
 	document.getElementById("lang-option-zh").textContent = S("lang-zh");
-	document.getElementById("lang-select").value = JournalLens.getUILanguageMode();
+	updateLanguageButtons();
 
 	// donate modal
 	document.getElementById("donate-title").textContent = S("donate-title");
@@ -48,6 +48,15 @@ function setLanguage(lang) {
 	applyStaticLabels();
 	renderSidebar();
 	renderArticles(State.articles);
+}
+
+function updateLanguageButtons() {
+	let mode = JournalLens.getUILanguageMode();
+	for (let btn of document.querySelectorAll("#lang-toggle button")) {
+		let active = btn.dataset.lang === mode;
+		btn.classList.toggle("active", active);
+		btn.setAttribute("aria-pressed", active ? "true" : "false");
+	}
 }
 
 /* ---------------------------------------------------------- *
@@ -253,9 +262,19 @@ function renderArticles(articles) {
 	}
 
 	resetFigureObserver();
+	let cardsToPrime = [];
 	for (let article of articles) {
-		cards.appendChild(buildCard(article));
+		let card = buildCard(article);
+		cards.appendChild(card);
+		if (card._figuresEl && cardsToPrime.length < 6) {
+			cardsToPrime.push(card);
+		}
 	}
+	window.setTimeout(() => {
+		for (let card of cardsToPrime) {
+			loadFiguresForCard(card);
+		}
+	}, 200);
 }
 
 function buildCard(article) {
@@ -522,6 +541,10 @@ function imageFromSrcset(srcset) {
 			if (m) {
 				width = parseInt(m[1]);
 			}
+			let density = p.match(/^([\d.]+)x$/);
+			if (density) {
+				width = Math.round(parseFloat(density[1]) * 1000);
+			}
 		}
 		if (!best || width > bestWidth) {
 			best = url;
@@ -534,7 +557,9 @@ function imageFromSrcset(srcset) {
 function imageURLFromElement(img, baseURL) {
 	let attrs = [
 		"src", "data-src", "data-original", "data-lazy-src", "data-image",
-		"data-large", "data-full", "data-hires", "data-download-url"
+		"data-large", "data-full", "data-hires", "data-download-url",
+		"data-large-src", "data-full-src", "data-high-res-src", "data-zoom-src",
+		"data-img-src", "data-original-src"
 	];
 	for (let attr of attrs) {
 		let url = JournalLens._resolveURL(baseURL, img.getAttribute(attr));
@@ -542,7 +567,17 @@ function imageURLFromElement(img, baseURL) {
 			return url;
 		}
 	}
-	return JournalLens._resolveURL(baseURL, imageFromSrcset(img.getAttribute("srcset")));
+	let srcset = img.getAttribute("srcset") || img.getAttribute("data-srcset");
+	let url = JournalLens._resolveURL(baseURL, imageFromSrcset(srcset));
+	if (url) {
+		return url;
+	}
+	let source = img.closest && img.closest("picture")
+		&& img.closest("picture").querySelector("source[srcset], source[data-srcset]");
+	return source
+		? JournalLens._resolveURL(baseURL,
+			imageFromSrcset(source.getAttribute("srcset") || source.getAttribute("data-srcset")))
+		: "";
 }
 
 function isUsefulImageURL(url) {
@@ -552,7 +587,7 @@ function isUsefulImageURL(url) {
 	if (/\.(svg|ico)([?#].*)?$/i.test(url)) {
 		return false;
 	}
-	if (/(logo|icon|avatar|profile|sprite|spinner|loader|pixel|tracking|advert|banner|social|share|facebook|twitter|wechat|weibo)/i.test(url)) {
+	if (/(logo|icon|avatar|profile|sprite|spinner|loader|pixel|tracking|advert|banner|share|facebook|twitter|wechat|weibo)/i.test(url)) {
 		return false;
 	}
 	return true;
@@ -617,6 +652,61 @@ function parseJSONLDImages(doc, baseURL, seen) {
 	return figures;
 }
 
+function metaOrLinkURL(el, baseURL) {
+	if (!el) {
+		return "";
+	}
+	return JournalLens._resolveURL(baseURL, el.getAttribute("content") || el.getAttribute("href"));
+}
+
+function figureURLFromContainer(container, baseURL) {
+	let img = container.querySelector("img");
+	let url = img && imageURLFromElement(img, baseURL);
+	if (url) {
+		return url;
+	}
+	let source = container.querySelector("source[srcset], source[data-srcset]");
+	url = source && JournalLens._resolveURL(baseURL,
+		imageFromSrcset(source.getAttribute("srcset") || source.getAttribute("data-srcset")));
+	if (url) {
+		return url;
+	}
+	for (let link of container.querySelectorAll("a[href]")) {
+		url = JournalLens._resolveURL(baseURL, link.getAttribute("href"));
+		if (/\.(jpe?g|png|gif|webp|tiff?)([?#].*)?$/i.test(url)
+			|| /(fig(?:ure)?|graphical|toc|image|medium|large|hires|full)/i.test(url)) {
+			return url;
+		}
+	}
+	return "";
+}
+
+function textFromFirst(container, selectors) {
+	for (let selector of selectors) {
+		let el = container.querySelector(selector);
+		let text = cleanText(el && el.textContent);
+		if (text) {
+			return text;
+		}
+	}
+	return "";
+}
+
+function figureFromContainer(container, baseURL) {
+	let url = figureURLFromContainer(container, baseURL);
+	if (!isUsefulImageURL(url)) {
+		return null;
+	}
+	let img = container.querySelector("img");
+	let label = textFromFirst(container, [
+		".label", ".figure-label", ".fig-label", "[class*='label']", "label"
+	]) || cleanText(img && img.getAttribute("alt")) || "Figure";
+	let caption = textFromFirst(container, [
+		"figcaption", ".caption", ".figure-caption", ".fig-caption", "[class*='caption']"
+	]) || cleanText(img && (img.getAttribute("title") || img.getAttribute("alt")));
+	return figureFromURL(url, label, caption);
+}
+
 function parseHTMLVisuals(htmlText, baseURL) {
 	let doc = new DOMParser().parseFromString(htmlText, "text/html");
 	let seen = new Set();
@@ -627,12 +717,13 @@ function parseHTMLVisuals(htmlText, baseURL) {
 		'meta[name="citation_graphical_abstract"]',
 		'meta[name="citation_image"]',
 		'meta[property="og:image"]',
+		'meta[property="og:image:secure_url"]',
 		'meta[name="twitter:image"]',
-		'meta[name="thumbnail"]'
+		'meta[name="thumbnail"]',
+		'link[rel="image_src"]'
 	];
 	for (let selector of metaSelectors) {
-		let meta = doc.querySelector(selector);
-		let url = meta && JournalLens._resolveURL(baseURL, meta.getAttribute("content"));
+		let url = metaOrLinkURL(doc.querySelector(selector), baseURL);
 		if (isUsefulImageURL(url)) {
 			graphicalAbstract = figureFromURL(url, "Preview", "Publisher page preview image");
 			seen.add(url);
@@ -649,19 +740,15 @@ function parseHTMLVisuals(htmlText, baseURL) {
 		}
 	}
 
-	for (let fig of doc.querySelectorAll("figure")) {
-		let img = fig.querySelector("img");
-		let url = img && imageURLFromElement(img, baseURL);
-		if (!isUsefulImageURL(url)) {
-			continue;
+	let containers = [
+		"figure", "[class*='figure']", "[class*='fig-']", "[id^='fig']",
+		"[id*='figure']", "[data-fig-id]", "[data-figure-id]"
+	].join(",");
+	for (let fig of doc.querySelectorAll(containers)) {
+		if (figures.length >= 8) {
+			break;
 		}
-		let label = cleanText(
-			(fig.querySelector(".label, .figure-label, [class*='label']") || {}).textContent
-		) || cleanText(img.getAttribute("alt")) || "Figure";
-		let caption = cleanText(
-			(fig.querySelector("figcaption, .caption, [class*='caption']") || {}).textContent
-		) || cleanText(img.getAttribute("title") || img.getAttribute("alt"));
-		addFigure(figures, seen, figureFromURL(url, label, caption));
+		addFigure(figures, seen, figureFromContainer(fig, baseURL));
 	}
 
 	for (let img of doc.querySelectorAll("img")) {
@@ -681,6 +768,54 @@ function parseHTMLVisuals(htmlText, baseURL) {
 	return { graphicalAbstract, figures };
 }
 
+function graphicHrefFromXML(graphic) {
+	return graphic
+		&& (graphic.getAttributeNS("http://www.w3.org/1999/xlink", "href")
+			|| graphic.getAttribute("xlink:href")
+			|| graphic.getAttribute("href")
+			|| graphic.getAttribute("src"));
+}
+
+function genericGraphicURLs(baseURL, href) {
+	let raw = String(href || "");
+	let url = JournalLens._resolveURL(baseURL, raw);
+	let noExt = raw.replace(/\.(jpg|jpeg|png|gif|webp|tif|tiff)$/i, "");
+	let variants = [
+		raw, noExt + ".jpg", noExt + ".png", noExt + ".jpeg", noExt + ".webp"
+	];
+	return JournalLens._uniqueURLs([
+		url,
+		...variants.map(v => JournalLens._resolveURL(baseURL, v))
+	]).filter(Boolean);
+}
+
+function parseXMLVisuals(xmlText, baseURL) {
+	let doc = new DOMParser().parseFromString(xmlText, "text/xml");
+	let figures = [];
+	let graphicalAbstract = null;
+	for (let fig of doc.querySelectorAll("fig, figure")) {
+		let label = cleanText((fig.querySelector("label") || {}).textContent);
+		let caption = cleanText((fig.querySelector("caption, figcaption") || {}).textContent);
+		let href = graphicHrefFromXML(fig.querySelector("graphic, media, img"));
+		if (!href) {
+			continue;
+		}
+		let figure = {
+			label: label || "Figure",
+			caption,
+			urls: genericGraphicURLs(baseURL, href)
+		};
+		let marker = [fig.getAttribute("fig-type") || "", label, caption].join(" ");
+		if (!graphicalAbstract && /(graphical|toc|abstract)/i.test(marker)) {
+			graphicalAbstract = figure;
+		}
+		else {
+			figures.push(figure);
+		}
+	}
+	return { graphicalAbstract, figures };
+}
+
 async function fetchPublisherVisuals(article) {
 	let graphicalAbstract = null;
 	let figures = [];
@@ -689,7 +824,13 @@ async function fetchPublisherVisuals(article) {
 	for (let url of pages) {
 		try {
 			let page = await JournalLens.fetchArticleHTML(url);
-			let parsed = parseHTMLVisuals(page.text, page.url || url);
+			let baseURL = page.url || url;
+			let parsed = /<\s*(article|fig|figure|graphic|media)(\s|>)/i.test(page.text)
+				? parseXMLVisuals(page.text, baseURL)
+				: parseHTMLVisuals(page.text, baseURL);
+			if (!parsed.graphicalAbstract && (!parsed.figures || !parsed.figures.length)) {
+				parsed = parseHTMLVisuals(page.text, baseURL);
+			}
 			if (!graphicalAbstract && parsed.graphicalAbstract) {
 				graphicalAbstract = parsed.graphicalAbstract;
 				seen.add(graphicalAbstract.urls[0]);
@@ -709,6 +850,10 @@ async function fetchPublisherVisuals(article) {
 }
 
 async function loadFiguresForCard(card) {
+	if (card._figuresRequested) {
+		return;
+	}
+	card._figuresRequested = true;
 	let article = card._article;
 	let container = card._figuresEl;
 	container.hidden = false;
@@ -757,6 +902,10 @@ async function loadFiguresForCard(card) {
 		|| (article.figures && article.figures[0]);
 	if (thumbFigure) {
 		setImageWithFallback(card._thumbEl, thumbFigure, true);
+	}
+
+	if (thumbFigure && (!article.figures || !article.figures.length)) {
+		article.figures = [thumbFigure];
 	}
 
 	if (!article.figures || !article.figures.length) {
@@ -871,8 +1020,9 @@ function initDonate() {
 function init() {
 	State.journals = JournalLens.getJournals();
 	applyStaticLabels();
-	document.getElementById("lang-select")
-		.addEventListener("change", (e) => setLanguage(e.target.value));
+	for (let btn of document.querySelectorAll("#lang-toggle button")) {
+		btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+	}
 	document.getElementById("refresh-btn")
 		.addEventListener("click", () => loadFeed(true));
 	initSearch();

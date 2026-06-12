@@ -215,7 +215,7 @@ var JournalLens = {
 				btn.id = "journallens-toolbarbutton";
 				btn.classList.add("zotero-tb-button");
 				btn.setAttribute("tooltiptext", this.getString("toolbar-tip"));
-				btn.style.listStyleImage = 'url("' + this.rootURI + 'icons/toolbar.png")';
+				btn.style.listStyleImage = 'url("' + this.rootURI + 'icons/toolbar.svg")';
 				btn.addEventListener("command", () => this.openFeedWindow(win));
 				let search = doc.getElementById("zotero-tb-search")
 					|| doc.getElementById("zotero-tb-search-textbox");
@@ -451,7 +451,7 @@ var JournalLens = {
 		let url = "https://api.crossref.org/journals/" + encodeURIComponent(issn)
 			+ "/works?sort=published&order=desc&rows=" + rows
 			+ "&filter=" + encodeURIComponent(filters.join(","))
-			+ "&select=DOI,title,author,abstract,issued,published,published-online,published-print,container-title,volume,issue,page,URL"
+			+ "&select=DOI,title,author,abstract,issued,published,published-online,published-print,container-title,volume,issue,page,URL,link"
 			+ "&mailto=" + this.CROSSREF_MAILTO;
 		let data = await this._getJSON(url);
 		let items = (data.message && data.message.items) || [];
@@ -469,6 +469,9 @@ var JournalLens = {
 				pages: w.page || "",
 				abstract: this._stripJATS(w.abstract),
 				url: w.URL || ("https://doi.org/" + w.DOI),
+				fullTextLinks: (w.link || [])
+					.map(l => l && l.URL)
+					.filter(Boolean),
 				pmcid: null,
 				pubTypes: [],
 				isOpenAccess: false,
@@ -542,6 +545,9 @@ var JournalLens = {
 		}
 		if (article.doi) {
 			urls.push("https://doi.org/" + article.doi);
+		}
+		for (let url of article.fullTextLinks || []) {
+			urls.push(url);
 		}
 
 		if (article.doi && article._unpaywall === undefined) {

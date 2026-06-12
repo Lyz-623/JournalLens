@@ -1,64 +1,149 @@
-<vbox id="journallens-prefs">
-	<linkset>
-		<html:link rel="localization" href="journallens.ftl"/>
-	</linkset>
-	<groupbox>
-		<label><html:h2 data-l10n-id="journallens-prefs-title">JournalLens</html:h2></label>
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>JournalLens Settings</title>
+	<style>
+		:root {
+			color-scheme: light dark;
+			--panel: Canvas;
+			--text: CanvasText;
+			--muted: GrayText;
+			--border: #d9dee7;
+			--accent: #1f6feb;
+		}
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--border: #3c3e44;
+				--accent: #6c9ef8;
+			}
+		}
+		body {
+			margin: 0;
+			padding: 18px;
+			color: var(--text);
+			background: var(--panel);
+			font: 13px "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+		}
+		#journallens-prefs {
+			max-width: 680px;
+		}
+		h2 {
+			margin: 0 0 6px;
+			font-size: 18px;
+			font-weight: 650;
+		}
+		.description {
+			margin: 0 0 16px;
+			color: var(--muted);
+			line-height: 1.45;
+		}
+		.row {
+			display: grid;
+			grid-template-columns: minmax(190px, 250px) minmax(160px, 1fr);
+			align-items: center;
+			gap: 12px;
+			padding: 10px 0;
+			border-top: 1px solid var(--border);
+		}
+		label {
+			font-weight: 600;
+		}
+		input, select {
+			min-height: 30px;
+			max-width: 240px;
+			box-sizing: border-box;
+			padding: 4px 8px;
+			font: inherit;
+		}
+		input[type="checkbox"] {
+			min-height: auto;
+			margin-right: 8px;
+		}
+		.check {
+			display: flex;
+			align-items: center;
+			font-weight: 500;
+		}
+		.actions {
+			display: flex;
+			gap: 8px;
+			padding-top: 14px;
+			border-top: 1px solid var(--border);
+		}
+		button {
+			min-height: 30px;
+			padding: 4px 12px;
+			border: 1px solid var(--border);
+			border-radius: 6px;
+			background: var(--panel);
+			color: var(--text);
+			font: inherit;
+		}
+		button.primary {
+			border-color: var(--accent);
+			color: var(--accent);
+		}
+	</style>
+</head>
+<body>
+	<section id="journallens-prefs">
+		<h2>JournalLens</h2>
+		<p id="pref-description" class="description">
+			Follow journals, browse recent papers, translate abstracts and load article figures.
+		</p>
 
-		<hbox align="center">
-			<label data-l10n-id="journallens-prefs-language" value="Interface language:"/>
-			<menulist preference="extensions.journallens.uiLanguage" native="true"
-				style="margin-inline-start: 6px;">
-				<menupopup>
-					<menuitem data-l10n-id="journallens-prefs-lang-auto" label="Follow Zotero" value="auto"/>
-					<menuitem label="English" value="en"/>
-					<menuitem label="中文" value="zh"/>
-				</menupopup>
-			</menulist>
-		</hbox>
+		<div class="row">
+			<label id="label-language" for="pref-language">Interface language</label>
+			<select id="pref-language">
+				<option value="auto">Follow Zotero</option>
+				<option value="zh">中文</option>
+				<option value="en">English</option>
+			</select>
+		</div>
 
-		<hbox align="center" style="margin-top: 6px;">
-			<label data-l10n-id="journallens-prefs-days" value="Days to fetch:"/>
-			<html:input type="number" min="7" max="180" style="width: 70px; margin-inline-start: 6px;"
-				preference="extensions.journallens.daysToFetch"/>
-		</hbox>
+		<div class="row">
+			<label id="label-days" for="pref-days">Days to fetch</label>
+			<input id="pref-days" type="number" min="7" max="180"/>
+		</div>
 
-		<hbox align="center" style="margin-top: 6px;">
-			<label data-l10n-id="journallens-prefs-articles" value="Max articles fetched per journal:"/>
-			<html:input type="number" min="10" max="500" style="width: 70px; margin-inline-start: 6px;"
-				preference="extensions.journallens.articlesPerJournal"/>
-		</hbox>
+		<div class="row">
+			<label id="label-articles" for="pref-articles">Max articles per journal</label>
+			<input id="pref-articles" type="number" min="10" max="500"/>
+		</div>
 
-		<hbox align="center" style="margin-top: 6px;">
-			<label data-l10n-id="journallens-prefs-cache" value="Cache duration (minutes):"/>
-			<html:input type="number" min="5" max="1440" style="width: 70px; margin-inline-start: 6px;"
-				preference="extensions.journallens.cacheMinutes"/>
-		</hbox>
+		<div class="row">
+			<label id="label-cache" for="pref-cache">Cache duration (minutes)</label>
+			<input id="pref-cache" type="number" min="5" max="1440"/>
+		</div>
 
-		<hbox align="center" style="margin-top: 6px;">
-			<label data-l10n-id="journallens-prefs-translate" value="Translation service:"/>
-			<menulist preference="extensions.journallens.translateProvider" native="true"
-				style="margin-inline-start: 6px;">
-				<menupopup>
-					<menuitem label="Google" value="google"/>
-					<menuitem label="MyMemory" value="mymemory"/>
-				</menupopup>
-			</menulist>
-		</hbox>
+		<div class="row">
+			<label id="label-translate" for="pref-translate">Translation service</label>
+			<select id="pref-translate">
+				<option value="google">Google</option>
+				<option value="mymemory">MyMemory</option>
+			</select>
+		</div>
 
-		<checkbox data-l10n-id="journallens-prefs-filter" native="true" style="margin-top: 8px;"
-			label="Only show research content (hide news, editorials, perspectives…)"
-			preference="extensions.journallens.filterArticleTypes"/>
-		<checkbox data-l10n-id="journallens-prefs-figures" native="true" style="margin-top: 4px;"
-			label="Load article figures and captions (open-access articles)"
-			preference="extensions.journallens.loadFigures"/>
+		<div class="row">
+			<span id="label-filter">Content filter</span>
+			<label class="check">
+				<input id="pref-filter" type="checkbox"/>
+				<span id="text-filter">Only show research content</span>
+			</label>
+		</div>
 
-		<separator/>
-		<hbox>
-			<button data-l10n-id="journallens-prefs-homepage" label="GitHub"
-				oncommand="Zotero.launchURL('https://github.com/Lyz-623/JournalLens')"/>
-			<button data-l10n-id="journallens-prefs-donate" label="♥ Donate"
-				oncommand="Zotero.launchURL('https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md')"/>
-		</hbox>
-	</groupbox>
-</vbox>
+		<div class="row">
+			<span id="label-figures">Figures</span>
+			<label class="check">
+				<input id="pref-figures" type="checkbox"/>
+				<span id="text-figures">Load figures and preview images</span>
+			</label>
+		</div>
+
+		<div class="actions">
+			<button id="pref-homepage" class="primary" type="button">GitHub</button>
+			<button id="pref-donate" type="button">Donate</button>
+		</div>
+	</section>
+</body>
+</html>

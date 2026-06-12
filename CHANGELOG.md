@@ -8,6 +8,31 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.2] — 2026-06-13
+
+UI, settings and visual-enrichment patch.
+
+### Fixed / 修复
+- Replaced the feed-window language dropdown with stable segmented buttons.
+  修复中英文切换无法选择、下拉选项重叠的问题。
+- Rebuilt the Zotero Settings → JournalLens pane as a valid XHTML settings page
+  with working preference bindings. 修复设置页打开后没有任何选项的问题。
+- Figure loading now proactively enriches the first visible cards instead of
+  relying only on scroll intersection events. 修复部分环境下图片抓取不触发的问题。
+
+### Changed / 变更
+- Moved the journal search box to the top of the sidebar, so it stays fixed when
+  followed journals grow. 将添加期刊搜索框固定在侧边栏顶部。
+- Refined fonts, spacing, colors, focus states and responsive layout while
+  keeping the interface simple. 优化字体、间距、颜色与可用性。
+- Updated the toolbar icon to a lens + J mark. 主工具栏图标更换为透镜 + J。
+- Expanded publisher-page figure parsing with `picture/srcset`, lazy/high-res
+  image attributes, JSON-LD, `image_src`, div-based figure containers and
+  Crossref full-text links. 增强出版商页面图片与预览图解析。
+- Simplified the README while keeping visual feature examples. 精简 README 并保留图文说明。
+
+---
+
 ## [0.3.1] — 2026-06-13
 
 Language and figure-extraction patch.
@@ -88,6 +113,7 @@ Initial release.
 - Bilingual (en-US / zh-CN) Fluent localisation, light/dark theme. 中英双语、深色模式。
 - Preferences pane, XPI build script, auto-update manifest. 偏好设置、打包脚本、自动更新清单。
 
+[0.3.2]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.2
 [0.3.1]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Lyz-623/JournalLens/releases/tag/v0.2.0

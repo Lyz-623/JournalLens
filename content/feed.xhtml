@@ -9,16 +9,21 @@
 <body>
 	<header id="topbar">
 		<div id="brand">
-			<span id="brand-icon">🔭</span>
+			<svg id="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+				<circle cx="14" cy="14" r="9" fill="none" stroke="currentColor" stroke-width="3"/>
+				<path d="M21 21 L28 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+				<path d="M16.5 9.5 v7.2 c0 2.4 -1.4 3.8 -3.7 3.8 c-1.2 0 -2.1 -0.3 -2.8 -0.9"
+					fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+			</svg>
 			<span id="brand-name">JournalLens</span>
 		</div>
 		<div id="topbar-actions">
-			<label id="lang-label" for="lang-select">Language</label>
-			<select id="lang-select">
-				<option id="lang-option-auto" value="auto">Follow Zotero</option>
-				<option id="lang-option-zh" value="zh">中文</option>
-				<option id="lang-option-en" value="en">English</option>
-			</select>
+			<span id="lang-label">Language</span>
+			<div id="lang-toggle" class="segmented" role="group" aria-label="Language">
+				<button type="button" data-lang="auto" id="lang-option-auto">Auto</button>
+				<button type="button" data-lang="zh" id="lang-option-zh">中文</button>
+				<button type="button" data-lang="en" id="lang-option-en">EN</button>
+			</div>
 			<button id="refresh-btn">Refresh</button>
 			<button id="donate-btn" class="donate">♥ Donate</button>
 		</div>
@@ -26,14 +31,14 @@
 
 	<div id="layout">
 		<aside id="sidebar">
-			<h2 id="h-followed">Followed journals</h2>
-			<ul id="journal-list"></ul>
-
 			<div id="add-journal">
 				<h2 id="h-add">Follow a journal</h2>
 				<input id="journal-search-input" type="text" placeholder="Journal name or ISSN…"/>
 				<ul id="journal-search-results" hidden="hidden"></ul>
 			</div>
+
+			<h2 id="h-followed">Followed journals</h2>
+			<ul id="journal-list"></ul>
 		</aside>
 
 		<main id="content">
