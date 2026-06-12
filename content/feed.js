@@ -8,48 +8,50 @@ var { Zotero, JournalLens } = window.arguments[0];
 var State = {
 	journals: [],
 	activeISSN: null, // null = all journals
+	articles: [],
 	figureObserver: null
 };
 
+function S(id) {
+	return JournalLens.getString(id);
+}
+
 /* ---------------------------------------------------------- *
- * l10n helper (falls back to English if Fluent is unavailable)
+ * Static labels (re-applied when the language changes)
  * ---------------------------------------------------------- */
 
-var EN_FALLBACK = {
-	"journallens-loading": "Loading latest articles…",
-	"journallens-loading-failed": "Some journals could not be loaded. Check your network connection.",
-	"journallens-no-journals": "No journals followed yet — add one on the left.",
-	"journallens-no-articles": "No articles found.",
-	"journallens-all-journals": "All journals",
-	"journallens-add-to-zotero": "Add to Zotero",
-	"journallens-added": "✓ Added",
-	"journallens-open-page": "Open page",
-	"journallens-show-more": "Show more",
-	"journallens-show-less": "Show less",
-	"journallens-figures-loading": "Loading figures…",
-	"journallens-searching": "Searching…",
-	"journallens-no-results": "No journals found",
-	"journallens-add-failed": "Could not add this article to Zotero"
-};
+function applyStaticLabels() {
+	document.documentElement.lang = JournalLens.getUILang();
+	document.getElementById("lang-label").textContent = S("lang-label");
+	document.getElementById("refresh-btn").textContent = S("refresh");
+	document.getElementById("donate-btn").textContent = S("donate");
+	document.getElementById("h-followed").textContent = S("followed");
+	document.getElementById("h-add").textContent = S("add-journal");
+	document.getElementById("journal-search-input").placeholder = S("search-ph");
+	document.getElementById("lang-select").value = JournalLens.getUILang();
 
-async function t(id, args) {
-	try {
-		if (document.l10n) {
-			let value = await document.l10n.formatValue(id, args);
-			if (value) {
-				return value;
-			}
-		}
-	}
-	catch (e) {}
-	return EN_FALLBACK[id] || id;
+	// donate modal
+	document.getElementById("donate-title").textContent = S("donate-title");
+	document.getElementById("donate-intro").textContent = S("donate-intro");
+	document.getElementById("cap-paypal").textContent = S("donate-paypal");
+	document.getElementById("cap-wechat").textContent = S("donate-wechat");
+	document.getElementById("cap-alipay").textContent = S("donate-alipay");
+	document.getElementById("donate-thanks").textContent = S("donate-thanks");
+	document.getElementById("donate-github").textContent = S("donate-github");
+}
+
+function setLanguage(lang) {
+	JournalLens.setUILanguage(lang);
+	applyStaticLabels();
+	renderSidebar();
+	renderArticles(State.articles);
 }
 
 /* ---------------------------------------------------------- *
  * Sidebar: followed journals + search
  * ---------------------------------------------------------- */
 
-async function renderSidebar() {
+function renderSidebar() {
 	let list = document.getElementById("journal-list");
 	list.replaceChildren();
 
@@ -57,7 +59,7 @@ async function renderSidebar() {
 	allItem.classList.toggle("active", State.activeISSN === null);
 	let allName = document.createElement("span");
 	allName.className = "name";
-	allName.textContent = await t("journallens-all-journals");
+	allName.textContent = S("all-journals");
 	allItem.appendChild(allName);
 	allItem.addEventListener("click", () => {
 		State.activeISSN = null;
@@ -126,12 +128,11 @@ async function runJournalSearch(query) {
 	results.hidden = false;
 	results.replaceChildren();
 	let li = document.createElement("li");
-	li.textContent = await t("journallens-searching");
+	li.textContent = S("searching");
 	results.appendChild(li);
 
 	let found = [];
 	try {
-		// Direct ISSN input
 		if (/^\d{4}-?\d{3}[\dXx]$/.test(query)) {
 			let issn = query.length === 8
 				? query.slice(0, 4) + "-" + query.slice(4)
@@ -149,7 +150,7 @@ async function runJournalSearch(query) {
 	results.replaceChildren();
 	if (!found.length) {
 		let empty = document.createElement("li");
-		empty.textContent = await t("journallens-no-results");
+		empty.textContent = S("no-results");
 		results.appendChild(empty);
 		return;
 	}
@@ -175,25 +176,26 @@ async function runJournalSearch(query) {
 }
 
 /* ---------------------------------------------------------- *
- * Feed loading + cards
+ * Feed loading
  * ---------------------------------------------------------- */
 
 async function loadFeed(force = false) {
 	let cards = document.getElementById("cards");
 	let status = document.getElementById("status");
 	cards.replaceChildren();
+	State.articles = [];
 
 	if (!State.journals.length) {
 		let empty = document.createElement("div");
 		empty.className = "empty";
-		empty.textContent = await t("journallens-no-journals");
+		empty.textContent = S("no-journals");
 		cards.appendChild(empty);
 		return;
 	}
 
 	status.hidden = false;
 	status.classList.remove("error");
-	status.textContent = await t("journallens-loading");
+	status.textContent = S("loading");
 
 	let targets = State.activeISSN
 		? State.journals.filter(j => j.issn === State.activeISSN)
@@ -216,29 +218,18 @@ async function loadFeed(force = false) {
 	}
 
 	articles.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-	// When showing several journals at once, drop cross-journal duplicates too
 	articles = JournalLens.dedupeArticles(articles);
+	State.articles = articles;
 
 	if (failures) {
 		status.classList.add("error");
-		status.textContent = await t("journallens-loading-failed");
+		status.textContent = S("loading-failed");
 	}
 	else {
 		status.hidden = true;
 	}
 
-	if (!articles.length) {
-		let empty = document.createElement("div");
-		empty.className = "empty";
-		empty.textContent = await t("journallens-no-articles");
-		cards.appendChild(empty);
-		return;
-	}
-
-	resetFigureObserver();
-	for (let article of articles) {
-		cards.appendChild(await buildCard(article));
-	}
+	renderArticles(articles);
 }
 
 function journalInitials(name) {
@@ -246,11 +237,31 @@ function journalInitials(name) {
 	return words.slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
 }
 
-async function buildCard(article) {
+function renderArticles(articles) {
+	let cards = document.getElementById("cards");
+	cards.replaceChildren();
+
+	if (!articles || !articles.length) {
+		let empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = S("no-articles");
+		cards.appendChild(empty);
+		return;
+	}
+
+	resetFigureObserver();
+	for (let article of articles) {
+		// reset per-render translation display state
+		article._showTranslated = false;
+		cards.appendChild(buildCard(article));
+	}
+}
+
+function buildCard(article) {
 	let card = document.createElement("div");
 	card.className = "card";
 
-	// thumbnail
+	// thumbnail (journal initials until a TOC / first figure loads)
 	let thumb = document.createElement("div");
 	thumb.className = "thumb";
 	thumb.textContent = journalInitials(article.journal);
@@ -282,41 +293,39 @@ async function buildCard(article) {
 	journalSpan.className = "journal";
 	journalSpan.textContent = article.journal;
 	meta.appendChild(journalSpan);
-	let rest = [article.date, article.volume && ("Vol. " + article.volume)]
-		.filter(Boolean).join(" · ");
+	let rest = [article.date, article.volume && ("Vol. " + article.volume),
+		article.issue && ("No. " + article.issue)].filter(Boolean).join(" · ");
 	if (rest) {
 		meta.appendChild(document.createTextNode(" · " + rest));
 	}
 	if (article.isOpenAccess) {
 		let badge = document.createElement("span");
 		badge.className = "badge-oa";
-		badge.textContent = "OA";
+		badge.textContent = S("oa");
 		meta.appendChild(badge);
 	}
 	body.appendChild(meta);
 
 	// abstract
+	let abstract = null;
 	if (article.abstract) {
-		let abstract = document.createElement("p");
+		abstract = document.createElement("p");
 		abstract.className = "card-abstract clamped";
 		abstract.textContent = article.abstract;
 		body.appendChild(abstract);
 
 		let toggle = document.createElement("button");
 		toggle.className = "abstract-toggle";
-		toggle.textContent = await t("journallens-show-more");
-		toggle.addEventListener("click", async () => {
+		toggle.textContent = S("show-more");
+		toggle.addEventListener("click", () => {
 			let clamped = abstract.classList.toggle("clamped");
-			toggle.textContent = await t(
-				clamped ? "journallens-show-more" : "journallens-show-less"
-			);
+			toggle.textContent = S(clamped ? "show-more" : "show-less");
 		});
 		body.appendChild(toggle);
 	}
 
 	// figures placeholder — populated lazily when the card scrolls into view
-	if (article.pmcid && article.isOpenAccess
-			&& JournalLens.getPref("loadFigures")) {
+	if (article.pmcid && article.isOpenAccess && JournalLens.getPref("loadFigures")) {
 		let figures = document.createElement("div");
 		figures.className = "figures";
 		figures.hidden = true;
@@ -333,28 +342,78 @@ async function buildCard(article) {
 
 	let addBtn = document.createElement("button");
 	addBtn.className = "primary";
-	addBtn.textContent = await t("journallens-add-to-zotero");
+	addBtn.textContent = S("add");
 	addBtn.addEventListener("click", async () => {
 		addBtn.disabled = true;
 		try {
 			await JournalLens.addToZoteroByDOI(article.doi);
-			addBtn.textContent = await t("journallens-added");
+			addBtn.textContent = S("added");
 		}
 		catch (e) {
 			Zotero.debug("JournalLens: add failed: " + e);
 			addBtn.disabled = false;
-			window.alert(await t("journallens-add-failed"));
+			window.alert(S("add-failed"));
 		}
 	});
 	actions.appendChild(addBtn);
 
 	let openBtn = document.createElement("button");
-	openBtn.textContent = await t("journallens-open-page");
+	openBtn.textContent = S("open-page");
 	openBtn.addEventListener("click", () => Zotero.launchURL(article.url));
 	actions.appendChild(openBtn);
 
+	// translate toggle (title + abstract)
+	let translateBtn = document.createElement("button");
+	translateBtn.textContent = S("translate");
+	translateBtn.addEventListener("click", () =>
+		toggleTranslate(article, title, abstract, translateBtn));
+	actions.appendChild(translateBtn);
+
 	body.appendChild(actions);
 	return card;
+}
+
+/* ---------------------------------------------------------- *
+ * Translation (title + abstract, EN <-> 中文)
+ * ---------------------------------------------------------- */
+
+async function toggleTranslate(article, titleEl, absEl, btn) {
+	if (article._showTranslated) {
+		titleEl.textContent = article.title;
+		if (absEl) {
+			absEl.textContent = article.abstract;
+		}
+		article._showTranslated = false;
+		btn.textContent = S("translate");
+		return;
+	}
+
+	let target = JournalLens.detectLang(article.title) === "zh" ? "en" : "zh";
+	btn.disabled = true;
+	btn.textContent = S("translating");
+	try {
+		if (!article._tx) {
+			let [tt, ta] = await Promise.all([
+				JournalLens.translateText(article.title, target),
+				article.abstract
+					? JournalLens.translateText(article.abstract, target)
+					: Promise.resolve("")
+			]);
+			article._tx = { title: tt, abstract: ta };
+		}
+		titleEl.textContent = article._tx.title;
+		if (absEl && article._tx.abstract) {
+			absEl.textContent = article._tx.abstract;
+		}
+		article._showTranslated = true;
+		btn.textContent = S("original");
+	}
+	catch (e) {
+		Zotero.debug("JournalLens: translate failed: " + e);
+		window.alert(S("translate-failed"));
+		btn.textContent = S("translate");
+	}
+	btn.disabled = false;
 }
 
 /* ---------------------------------------------------------- *
@@ -372,19 +431,49 @@ function resetFigureObserver() {
 				loadFiguresForCard(entry.target);
 			}
 		}
-	}, { root: document.getElementById("content"), rootMargin: "200px" });
+	}, { root: document.getElementById("content"), rootMargin: "300px" });
 }
 
 function parseFigures(xmlText, pmcid) {
 	let doc = new DOMParser().parseFromString(xmlText, "text/xml");
+	let graphicHref = (graphic) => graphic
+		&& (graphic.getAttributeNS("http://www.w3.org/1999/xlink", "href")
+			|| graphic.getAttribute("xlink:href")
+			|| graphic.getAttribute("href"));
+
+	// Graphical abstract / TOC graphic (preferred thumbnail)
+	let graphicalAbstract = null;
+	for (let fig of doc.querySelectorAll("fig")) {
+		let type = (fig.getAttribute("fig-type") || "").toLowerCase();
+		let labelText = (fig.querySelector("label")
+			|| fig.querySelector("caption")
+			|| {}).textContent || "";
+		if (type.includes("graphic") || /graphical abstract/i.test(labelText)) {
+			let href = graphicHref(fig.querySelector("graphic"));
+			if (href) {
+				graphicalAbstract = { label: "", caption: labelText.trim(),
+					urls: JournalLens.figureImageURLs(pmcid, href) };
+				break;
+			}
+		}
+	}
+	if (!graphicalAbstract) {
+		let absGraphic = doc.querySelector('abstract[abstract-type="graphical"] graphic');
+		let href = graphicHref(absGraphic);
+		if (href) {
+			graphicalAbstract = { label: "", caption: "",
+				urls: JournalLens.figureImageURLs(pmcid, href) };
+		}
+	}
+
+	// Main body figures
 	let figures = [];
 	for (let fig of doc.querySelectorAll("fig")) {
-		let graphic = fig.querySelector("graphic");
-		if (!graphic) {
-			continue;
+		let type = (fig.getAttribute("fig-type") || "").toLowerCase();
+		if (type.includes("graphic")) {
+			continue; // already captured as graphical abstract
 		}
-		let href = graphic.getAttributeNS("http://www.w3.org/1999/xlink", "href")
-			|| graphic.getAttribute("xlink:href") || graphic.getAttribute("href");
+		let href = graphicHref(fig.querySelector("graphic"));
 		if (!href) {
 			continue;
 		}
@@ -392,13 +481,11 @@ function parseFigures(xmlText, pmcid) {
 		let caption = fig.querySelector("caption");
 		figures.push({
 			label: label ? label.textContent.trim() : "",
-			caption: caption
-				? caption.textContent.replace(/\s+/g, " ").trim()
-				: "",
+			caption: caption ? caption.textContent.replace(/\s+/g, " ").trim() : "",
 			urls: JournalLens.figureImageURLs(pmcid, href)
 		});
 	}
-	return figures;
+	return { graphicalAbstract, figures };
 }
 
 async function loadFiguresForCard(card) {
@@ -407,13 +494,15 @@ async function loadFiguresForCard(card) {
 	container.hidden = false;
 	let loading = document.createElement("span");
 	loading.className = "figures-loading";
-	loading.textContent = await t("journallens-figures-loading");
+	loading.textContent = S("figures-loading");
 	container.appendChild(loading);
 
 	try {
 		if (article.figures === null) {
 			let xml = await JournalLens.fetchFullTextXML(article.pmcid);
-			article.figures = parseFigures(xml, article.pmcid);
+			let parsed = parseFigures(xml, article.pmcid);
+			article.figures = parsed.figures;
+			article.graphicalAbstract = parsed.graphicalAbstract;
 		}
 	}
 	catch (e) {
@@ -422,15 +511,20 @@ async function loadFiguresForCard(card) {
 	}
 
 	container.replaceChildren();
-	if (!article.figures.length) {
+
+	// Thumbnail: prefer the TOC / graphical abstract, else Figure 1
+	let thumbFigure = article.graphicalAbstract
+		|| (article.figures && article.figures[0]);
+	if (thumbFigure) {
+		setImageWithFallback(card._thumbEl, thumbFigure, true);
+	}
+
+	if (!article.figures || !article.figures.length) {
 		container.hidden = true;
 		return;
 	}
 
-	// Use the first figure as the card thumbnail
-	setImageWithFallback(card._thumbEl, article.figures[0], true);
-
-	for (let figure of article.figures.slice(0, 8)) {
+	for (let figure of article.figures.slice(0, 6)) {
 		let item = document.createElement("div");
 		item.className = "figure-item";
 		setImageWithFallback(item, figure, false);
@@ -463,7 +557,7 @@ function setImageWithFallback(parent, figure, isThumb) {
 		img.addEventListener("load", () => {
 			parent.textContent = "";
 			parent.appendChild(img);
-			parent.addEventListener("click", () => openLightbox(figure));
+			parent.onclick = () => openLightbox(figure);
 		}, { once: true });
 	}
 	else {
@@ -487,8 +581,7 @@ function openLightbox(figure) {
 			img.src = figure.urls[index];
 		}
 	};
-	caption.textContent = [figure.label, figure.caption]
-		.filter(Boolean).join(" — ");
+	caption.textContent = [figure.label, figure.caption].filter(Boolean).join(" — ");
 	lightbox.hidden = false;
 }
 
@@ -504,8 +597,31 @@ function initLightbox() {
 	window.addEventListener("keydown", (event) => {
 		if (event.key === "Escape") {
 			lightbox.hidden = true;
+			document.getElementById("donate-modal").hidden = true;
 		}
 	});
+}
+
+/* ---------------------------------------------------------- *
+ * Donate modal
+ * ---------------------------------------------------------- */
+
+function initDonate() {
+	let modal = document.getElementById("donate-modal");
+	document.getElementById("donate-btn")
+		.addEventListener("click", () => { modal.hidden = false; });
+	document.getElementById("donate-close")
+		.addEventListener("click", () => { modal.hidden = true; });
+	modal.addEventListener("click", (event) => {
+		if (event.target === modal) {
+			modal.hidden = true;
+		}
+	});
+	document.getElementById("donate-github")
+		.addEventListener("click", (event) => {
+			event.preventDefault();
+			JournalLens.openDonatePage();
+		});
 }
 
 /* ---------------------------------------------------------- *
@@ -514,12 +630,14 @@ function initLightbox() {
 
 function init() {
 	State.journals = JournalLens.getJournals();
+	applyStaticLabels();
+	document.getElementById("lang-select")
+		.addEventListener("change", (e) => setLanguage(e.target.value));
 	document.getElementById("refresh-btn")
 		.addEventListener("click", () => loadFeed(true));
-	document.getElementById("donate-btn")
-		.addEventListener("click", () => JournalLens.openDonatePage());
 	initSearch();
 	initLightbox();
+	initDonate();
 	renderSidebar();
 	loadFeed();
 }

@@ -4,19 +4,55 @@
 	</linkset>
 	<groupbox>
 		<label><html:h2 data-l10n-id="journallens-prefs-title">JournalLens</html:h2></label>
+
 		<hbox align="center">
-			<label data-l10n-id="journallens-prefs-articles" value="Articles per journal:"/>
-			<html:input type="number" min="5" max="50" style="width: 70px; margin-inline-start: 6px;"
+			<label data-l10n-id="journallens-prefs-language" value="Interface language:"/>
+			<menulist preference="extensions.journallens.uiLanguage" native="true"
+				style="margin-inline-start: 6px;">
+				<menupopup>
+					<menuitem data-l10n-id="journallens-prefs-lang-auto" label="Follow Zotero" value="auto"/>
+					<menuitem label="English" value="en"/>
+					<menuitem label="中文" value="zh"/>
+				</menupopup>
+			</menulist>
+		</hbox>
+
+		<hbox align="center" style="margin-top: 6px;">
+			<label data-l10n-id="journallens-prefs-issues" value="Issues to fetch (most recent):"/>
+			<html:input type="number" min="1" max="6" style="width: 70px; margin-inline-start: 6px;"
+				preference="extensions.journallens.issuesToFetch"/>
+		</hbox>
+
+		<hbox align="center" style="margin-top: 6px;">
+			<label data-l10n-id="journallens-prefs-articles" value="Max articles fetched per journal:"/>
+			<html:input type="number" min="10" max="200" style="width: 70px; margin-inline-start: 6px;"
 				preference="extensions.journallens.articlesPerJournal"/>
 		</hbox>
+
 		<hbox align="center" style="margin-top: 6px;">
 			<label data-l10n-id="journallens-prefs-cache" value="Cache duration (minutes):"/>
 			<html:input type="number" min="5" max="1440" style="width: 70px; margin-inline-start: 6px;"
 				preference="extensions.journallens.cacheMinutes"/>
 		</hbox>
-		<checkbox data-l10n-id="journallens-prefs-figures" native="true" style="margin-top: 6px;"
+
+		<hbox align="center" style="margin-top: 6px;">
+			<label data-l10n-id="journallens-prefs-translate" value="Translation service:"/>
+			<menulist preference="extensions.journallens.translateProvider" native="true"
+				style="margin-inline-start: 6px;">
+				<menupopup>
+					<menuitem label="Google" value="google"/>
+					<menuitem label="MyMemory" value="mymemory"/>
+				</menupopup>
+			</menulist>
+		</hbox>
+
+		<checkbox data-l10n-id="journallens-prefs-filter" native="true" style="margin-top: 8px;"
+			label="Only show research content (hide news, editorials, perspectives…)"
+			preference="extensions.journallens.filterArticleTypes"/>
+		<checkbox data-l10n-id="journallens-prefs-figures" native="true" style="margin-top: 4px;"
 			label="Load article figures and captions (open-access articles)"
 			preference="extensions.journallens.loadFigures"/>
+
 		<separator/>
 		<hbox>
 			<button data-l10n-id="journallens-prefs-homepage" label="GitHub"

@@ -46,9 +46,10 @@ body { display: flex; flex-direction: column; }
 }
 
 #brand { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; }
-#topbar-actions { display: flex; gap: 8px; }
+#topbar-actions { display: flex; align-items: center; gap: 8px; }
+#lang-label { color: var(--text-soft); font-size: 12px; }
 
-button {
+select, button {
 	font: inherit;
 	padding: 5px 12px;
 	border: 1px solid var(--border);
@@ -57,6 +58,7 @@ button {
 	color: var(--text);
 	cursor: pointer;
 }
+select { padding: 5px 8px; }
 button:hover { border-color: var(--accent); color: var(--accent); }
 button.donate { color: var(--donate); border-color: var(--donate); }
 button.donate:hover { background: var(--donate); color: #fff; }
@@ -156,8 +158,8 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 
 .thumb {
-	width: 170px;
-	height: 130px;
+	width: 180px;
+	height: 140px;
 	flex-shrink: 0;
 	border-radius: 8px;
 	overflow: hidden;
@@ -214,10 +216,10 @@ button:disabled { opacity: 0.5; cursor: default; }
 
 /* figure strip */
 .figures { display: flex; gap: 8px; margin: 8px 0; overflow-x: auto; padding-bottom: 4px; }
-.figure-item { flex-shrink: 0; width: 110px; cursor: pointer; }
+.figure-item { flex-shrink: 0; width: 120px; cursor: pointer; }
 .figure-item img {
-	width: 110px;
-	height: 80px;
+	width: 120px;
+	height: 90px;
 	object-fit: cover;
 	border-radius: 6px;
 	border: 1px solid var(--border);
@@ -233,12 +235,12 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 .figures-loading { color: var(--text-soft); font-size: 11px; }
 
-.card-actions { display: flex; gap: 8px; margin-top: 8px; }
+.card-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 
-/* ---------- lightbox ---------- */
-#lightbox[hidden] { display: none; }
+/* ---------- lightbox & donate modal ---------- */
+#lightbox[hidden], #donate-modal[hidden] { display: none; }
 
-#lightbox {
+#lightbox, #donate-modal {
 	position: fixed;
 	inset: 0;
 	background: rgba(0, 0, 0, 0.75);
@@ -247,7 +249,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 	justify-content: center;
 	z-index: 100;
 }
-#lightbox-inner {
+#lightbox-inner, #donate-inner {
 	position: relative;
 	max-width: 86%;
 	max-height: 90%;
@@ -260,7 +262,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 #lightbox-img { max-width: 100%; max-height: 62vh; object-fit: contain; border-radius: 6px; }
 #lightbox-caption { overflow-y: auto; max-height: 20vh; line-height: 1.5; color: var(--text); }
-#lightbox-close {
+#lightbox-close, #donate-close {
 	position: absolute;
 	top: 8px;
 	right: 8px;
@@ -269,6 +271,25 @@ button:disabled { opacity: 0.5; cursor: default; }
 	font-size: 16px;
 	color: var(--text-soft);
 }
+
+/* donate modal */
+#donate-inner { align-items: center; text-align: center; max-width: 720px; }
+#donate-title { margin: 4px 0; }
+#donate-intro { color: var(--text-soft); max-width: 560px; line-height: 1.5; margin: 0 0 4px; }
+#donate-grid { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+.donate-item { margin: 0; }
+.donate-item img {
+	width: 180px;
+	height: 180px;
+	object-fit: contain;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: #fff;
+}
+.donate-item figcaption { margin-top: 6px; font-weight: 600; }
+#donate-thanks { font-size: 15px; margin: 4px 0 0; }
+#donate-github { color: var(--accent); font-size: 12px; cursor: pointer; text-decoration: none; }
+#donate-github:hover { text-decoration: underline; }
 
 .empty {
 	text-align: center;

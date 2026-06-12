@@ -1,4 +1,4 @@
-/* global Zotero, Services */
+/* global Zotero, Services, Components */
 "use strict";
 
 /**
@@ -7,8 +7,9 @@
  *
  * Data sources:
  *  - Crossref REST API: latest works per journal (by ISSN), all disciplines.
- *  - Europe PMC REST API: abstracts, open-access flags and, for OA articles,
- *    full-text figures with captions.
+ *  - Europe PMC REST API: abstracts, publication types (for filtering),
+ *    open-access flags and, for OA articles, full-text figures with captions.
+ *  - Translation: Google (keyless gtx endpoint) with a MyMemory fallback.
  */
 var JournalLens = {
 	id: null,
@@ -17,12 +18,104 @@ var JournalLens = {
 
 	PREF_BRANCH: "extensions.journallens.",
 	CROSSREF_MAILTO: "yunze623@gmail.com",
-	DONATE_URL: "https://github.com/yunze623/JournalLens/blob/main/DONATE.md",
 	HOMEPAGE_URL: "https://github.com/yunze623/JournalLens",
+	DONATE_URL: "https://github.com/yunze623/JournalLens/blob/main/DONATE.md",
 
 	_feedWindow: null,
 	_cache: new Map(),
-	_addedMenuItems: new WeakMap(),
+
+	/* ---------------------------------------------------------- *
+	 * Bilingual UI strings (EN / 中文)
+	 * ---------------------------------------------------------- */
+	STRINGS: {
+		en: {
+			"menuitem": "JournalLens — Journal Feed",
+			"toolbar-tip": "JournalLens — browse the latest journal articles",
+			"refresh": "Refresh",
+			"donate": "♥ Donate",
+			"followed": "Followed journals",
+			"add-journal": "Follow a journal",
+			"search-ph": "Journal name or ISSN…",
+			"all-journals": "All journals",
+			"searching": "Searching…",
+			"no-results": "No journals found",
+			"loading": "Loading latest articles…",
+			"loading-failed": "Some journals could not be loaded. Check your network connection.",
+			"no-journals": "No journals followed yet — add one on the left.",
+			"no-articles": "No articles found.",
+			"add": "Add to Zotero",
+			"added": "✓ Added",
+			"add-failed": "Could not add this article to Zotero",
+			"open-page": "Open page",
+			"show-more": "Show more",
+			"show-less": "Show less",
+			"figures-loading": "Loading figures…",
+			"translate": "中 / EN",
+			"original": "Original",
+			"translating": "Translating…",
+			"translate-failed": "Translation failed. Please try again later.",
+			"oa": "OA",
+			"lang-label": "Language",
+			"close": "Close",
+			"donate-title": "Support JournalLens ♥",
+			"donate-intro": "JournalLens is free and open source. If it saves you time, a small tip keeps the updates coming!",
+			"donate-paypal": "PayPal",
+			"donate-wechat": "WeChat Pay",
+			"donate-alipay": "Alipay",
+			"donate-thanks": "Thank you! 🙏",
+			"donate-github": "Open donation page on GitHub"
+		},
+		zh: {
+			"menuitem": "JournalLens — 期刊速览",
+			"toolbar-tip": "JournalLens — 浏览期刊最新文章",
+			"refresh": "刷新",
+			"donate": "♥ 打赏支持",
+			"followed": "关注的期刊",
+			"add-journal": "添加期刊",
+			"search-ph": "期刊名称或 ISSN…",
+			"all-journals": "全部期刊",
+			"searching": "搜索中…",
+			"no-results": "未找到相关期刊",
+			"loading": "正在加载最新文章…",
+			"loading-failed": "部分期刊加载失败,请检查网络连接。",
+			"no-journals": "还没有关注任何期刊,请在左侧添加。",
+			"no-articles": "未找到文章。",
+			"add": "添加到 Zotero",
+			"added": "✓ 已添加",
+			"add-failed": "无法将该文章添加到 Zotero",
+			"open-page": "打开原文",
+			"show-more": "展开",
+			"show-less": "收起",
+			"figures-loading": "正在加载图片…",
+			"translate": "EN / 中",
+			"original": "原文",
+			"translating": "翻译中…",
+			"translate-failed": "翻译失败,请稍后重试。",
+			"oa": "OA",
+			"lang-label": "语言",
+			"close": "关闭",
+			"donate-title": "打赏支持 JournalLens ♥",
+			"donate-intro": "JournalLens 完全免费开源。如果它帮你节省了时间,欢迎打赏支持,你的支持是持续更新的最大动力!",
+			"donate-paypal": "PayPal",
+			"donate-wechat": "微信支付",
+			"donate-alipay": "支付宝",
+			"donate-thanks": "谢谢! 🙏",
+			"donate-github": "在 GitHub 上查看打赏页面"
+		}
+	},
+
+	/* Publication types (Europe PMC pubType / PubMed) that are NOT real research
+	 * content and should be filtered out. Matched as case-insensitive substrings. */
+	PUBTYPE_BLOCK: [
+		"news", "editorial", "comment", "correction", "erratum", "corrigendum",
+		"retraction", "expression of concern", "obituary", "biography",
+		"book review", "product review", "meeting report", "congress",
+		"perspective", "historical article", "interview", "newspaper article",
+		"published erratum", "patient education handout", "address"
+	],
+
+	/* Obvious non-article titles when no publication type is available. */
+	TITLE_BLOCK_RE: /^(editorial|correction|author correction|publisher correction|erratum|corrigendum|retraction(?: note)?|expression of concern|news (?:&|and) views|in this issue|research highlights?|from the editors?|this month in|news in brief|books? (?:in brief|received))\b/i,
 
 	init({ id, version, rootURI }) {
 		this.id = id;
@@ -42,26 +135,89 @@ var JournalLens = {
 	},
 
 	/* ---------------------------------------------------------- *
-	 * Main-window UI (Tools menu entry)
+	 * i18n
+	 * ---------------------------------------------------------- */
+
+	getUILang() {
+		let pref = this.getPref("uiLanguage") || "auto";
+		if (pref === "en" || pref === "zh") {
+			return pref;
+		}
+		let locale = (Zotero.locale || "en").toLowerCase();
+		return locale.startsWith("zh") ? "zh" : "en";
+	},
+
+	getString(id) {
+		let lang = this.getUILang();
+		return (this.STRINGS[lang] && this.STRINGS[lang][id])
+			|| this.STRINGS.en[id] || id;
+	},
+
+	setUILanguage(lang) {
+		this.setPref("uiLanguage", lang);
+		for (let win of Zotero.getMainWindows()) {
+			this._relabelWindow(win);
+		}
+	},
+
+	_relabelWindow(win) {
+		let mi = win.document.getElementById("journallens-menuitem");
+		if (mi) {
+			mi.setAttribute("label", this.getString("menuitem"));
+		}
+		let tb = win.document.getElementById("journallens-toolbarbutton");
+		if (tb) {
+			tb.setAttribute("tooltiptext", this.getString("toolbar-tip"));
+		}
+	},
+
+	/* ---------------------------------------------------------- *
+	 * Main-window UI: Tools menu entry + toolbar quick-open button
 	 * ---------------------------------------------------------- */
 
 	addToWindow(win) {
 		let doc = win.document;
-		if (doc.getElementById("journallens-menuitem")) {
-			return;
+
+		// Tools menu item
+		if (!doc.getElementById("journallens-menuitem")) {
+			let menuitem = doc.createXULElement("menuitem");
+			menuitem.id = "journallens-menuitem";
+			menuitem.setAttribute("label", this.getString("menuitem"));
+			menuitem.addEventListener("command", () => this.openFeedWindow(win));
+			let toolsPopup = doc.getElementById("menu_ToolsPopup");
+			if (toolsPopup) {
+				toolsPopup.appendChild(menuitem);
+			}
 		}
-		win.MozXULElement.insertFTLIfNeeded("journallens.ftl");
-		let menuitem = doc.createXULElement("menuitem");
-		menuitem.id = "journallens-menuitem";
-		menuitem.setAttribute("data-l10n-id", "journallens-menuitem");
-		menuitem.addEventListener("command", () => this.openFeedWindow(win));
-		doc.getElementById("menu_ToolsPopup").appendChild(menuitem);
+
+		// Toolbar quick-open button (next to the search box)
+		if (!doc.getElementById("journallens-toolbarbutton")) {
+			let toolbar = doc.getElementById("zotero-items-toolbar");
+			if (toolbar) {
+				let btn = doc.createXULElement("toolbarbutton");
+				btn.id = "journallens-toolbarbutton";
+				btn.classList.add("zotero-tb-button");
+				btn.setAttribute("tooltiptext", this.getString("toolbar-tip"));
+				btn.style.listStyleImage = 'url("' + this.rootURI + 'icons/toolbar.png")';
+				btn.addEventListener("command", () => this.openFeedWindow(win));
+				let search = doc.getElementById("zotero-tb-search")
+					|| doc.getElementById("zotero-tb-search-textbox");
+				if (search && search.parentElement === toolbar) {
+					toolbar.insertBefore(btn, search);
+				}
+				else {
+					toolbar.appendChild(btn);
+				}
+			}
+		}
 	},
 
 	removeFromWindow(win) {
-		let menuitem = win.document.getElementById("journallens-menuitem");
-		if (menuitem) {
-			menuitem.remove();
+		for (let id of ["journallens-menuitem", "journallens-toolbarbutton"]) {
+			let el = win.document.getElementById(id);
+			if (el) {
+				el.remove();
+			}
 		}
 	},
 
@@ -73,7 +229,7 @@ var JournalLens = {
 		this._feedWindow = win.openDialog(
 			"chrome://journallens/content/feed.xhtml",
 			"journallens-feed",
-			"chrome,resizable,centerscreen,dialog=no,width=1150,height=760",
+			"chrome,resizable,centerscreen,dialog=no,width=1180,height=780",
 			{ Zotero, JournalLens: this }
 		);
 	},
@@ -229,18 +385,19 @@ var JournalLens = {
 				abstract: this._stripJATS(w.abstract),
 				url: w.URL || ("https://doi.org/" + w.DOI),
 				pmcid: null,
+				pubTypes: [],
 				isOpenAccess: false,
-				figures: null
+				figures: null,
+				graphicalAbstract: null
 			}));
 	},
 
 	/* ---------------------------------------------------------- *
-	 * Europe PMC: abstracts, OA flags, full-text figures
+	 * Europe PMC: abstracts, publication types, OA flags, PMCIDs
 	 * ---------------------------------------------------------- */
 
 	async enrichWithEuropePMC(articles) {
 		let withDOI = articles.filter(a => a.doi);
-		// Batch lookup, 10 DOIs per request to keep the query short
 		for (let i = 0; i < withDOI.length; i += 10) {
 			let batch = withDOI.slice(i, i + 10);
 			let query = batch.map(a => 'DOI:"' + a.doi + '"').join(" OR ");
@@ -265,6 +422,10 @@ var JournalLens = {
 					if (!article.authors && r.authorString) {
 						article.authors = r.authorString;
 					}
+					if (r.pubTypeList && r.pubTypeList.pubType) {
+						article.pubTypes = [].concat(r.pubTypeList.pubType)
+							.map(t => String(t).toLowerCase());
+					}
 				}
 			}
 			catch (e) {
@@ -274,30 +435,53 @@ var JournalLens = {
 		return articles;
 	},
 
-	/**
-	 * Fetch the full-text JATS XML for an OA article and return its figures.
-	 * Returns [{ label, caption, urls: [candidate image URLs] }, ...]
-	 * XML is parsed by the caller (window context) — here we just fetch.
-	 */
-	async fetchFullTextXML(pmcid) {
-		let url = "https://www.ebi.ac.uk/europepmc/webservices/rest/"
-			+ encodeURIComponent(pmcid) + "/fullTextXML";
-		return this._getText(url);
-	},
-
-	figureImageURLs(pmcid, graphicHref) {
-		// Common hosting patterns for PMC figure images; the renderer tries
-		// them in order via <img> error fallback.
-		let name = graphicHref.replace(/\.(jpg|jpeg|png|gif|tif|tiff)$/i, "");
-		return [
-			"https://europepmc.org/articles/" + pmcid + "/bin/" + name + ".jpg",
-			"https://www.ncbi.nlm.nih.gov/pmc/articles/" + pmcid + "/bin/" + name + ".jpg"
-		];
-	},
-
 	/* ---------------------------------------------------------- *
-	 * Feed assembly with caching
+	 * Filtering
 	 * ---------------------------------------------------------- */
+
+	isBlockedType(article) {
+		if (article.pubTypes && article.pubTypes.length) {
+			let joined = article.pubTypes.join("; ");
+			if (this.PUBTYPE_BLOCK.some(b => joined.includes(b))) {
+				return true;
+			}
+		}
+		if (this.TITLE_BLOCK_RE.test(article.title || "")) {
+			return true;
+		}
+		return false;
+	},
+
+	filterArticleTypes(articles) {
+		return articles.filter(a => !this.isBlockedType(a));
+	},
+
+	/**
+	 * Keep only the articles belonging to the N most recent issues.
+	 * Articles without a volume/issue (online-first) are grouped into a single
+	 * "online first" bucket, which — since the feed is date-sorted — naturally
+	 * sits at the top alongside the latest printed issue.
+	 */
+	filterRecentIssues(articles, issueCount) {
+		if (!issueCount || issueCount < 1) {
+			return articles;
+		}
+		let order = [];
+		let keyFor = (a) => {
+			if (a.volume || a.issue) {
+				return "v" + (a.volume || "") + "i" + (a.issue || "");
+			}
+			return "__online__";
+		};
+		for (let a of articles) {
+			let k = keyFor(a);
+			if (!order.includes(k)) {
+				order.push(k);
+			}
+		}
+		let keep = new Set(order.slice(0, issueCount));
+		return articles.filter(a => keep.has(keyFor(a)));
+	},
 
 	/**
 	 * Collapse duplicate entries that point at the same paper. Some journals
@@ -329,11 +513,120 @@ var JournalLens = {
 		if (!force && cached && (Date.now() - cached.time) < cacheMinutes * 60000) {
 			return cached.articles;
 		}
-		let rows = parseInt(this.getPref("articlesPerJournal")) || 20;
+		let rows = parseInt(this.getPref("articlesPerJournal")) || 50;
+		let issues = parseInt(this.getPref("issuesToFetch")) || 2;
+
 		let articles = this.dedupeArticles(await this.fetchJournalFeed(issn, rows));
 		await this.enrichWithEuropePMC(articles);
+		if (this.getPref("filterArticleTypes")) {
+			articles = this.filterArticleTypes(articles);
+		}
+		articles = this.filterRecentIssues(articles, issues);
+
 		this._cache.set(issn, { time: Date.now(), articles });
 		return articles;
+	},
+
+	/* ---------------------------------------------------------- *
+	 * Full-text figures (lazy, OA articles only)
+	 * ---------------------------------------------------------- */
+
+	async fetchFullTextXML(pmcid) {
+		let url = "https://www.ebi.ac.uk/europepmc/webservices/rest/"
+			+ encodeURIComponent(pmcid) + "/fullTextXML";
+		return this._getText(url);
+	},
+
+	figureImageURLs(pmcid, graphicHref) {
+		let name = graphicHref.replace(/\.(jpg|jpeg|png|gif|tif|tiff)$/i, "");
+		return [
+			"https://europepmc.org/articles/" + pmcid + "/bin/" + name + ".jpg",
+			"https://www.ncbi.nlm.nih.gov/pmc/articles/" + pmcid + "/bin/" + name + ".jpg"
+		];
+	},
+
+	/* ---------------------------------------------------------- *
+	 * Translation (Google gtx with MyMemory fallback)
+	 * ---------------------------------------------------------- */
+
+	detectLang(text) {
+		return /[一-鿿]/.test(text || "") ? "zh" : "en";
+	},
+
+	async translateText(text, target) {
+		if (!text || !text.trim()) {
+			return text;
+		}
+		let src = this.detectLang(text);
+		if (src === target) {
+			return text;
+		}
+		let provider = this.getPref("translateProvider") || "google";
+		let order = provider === "mymemory"
+			? ["mymemory", "google"]
+			: ["google", "mymemory"];
+		let lastErr;
+		for (let p of order) {
+			try {
+				return await this["_translate_" + p](text, target, src);
+			}
+			catch (e) {
+				lastErr = e;
+				Zotero.debug("JournalLens: translate via " + p + " failed: " + e);
+			}
+		}
+		throw lastErr || new Error("translation failed");
+	},
+
+	async _translate_google(text, target, src) {
+		let tl = target === "zh" ? "zh-CN" : "en";
+		let sl = src === "zh" ? "zh-CN" : "en";
+		let url = "https://translate.googleapis.com/translate_a/single"
+			+ "?client=gtx&sl=" + sl + "&tl=" + tl + "&dt=t";
+		let xhr = await Zotero.HTTP.request("POST", url, {
+			body: "q=" + encodeURIComponent(text),
+			headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+			timeout: 30000
+		});
+		let data = JSON.parse(xhr.responseText);
+		if (!data || !data[0]) {
+			throw new Error("unexpected response");
+		}
+		return data[0].map(seg => (seg && seg[0]) || "").join("");
+	},
+
+	_chunkText(text, max) {
+		let parts = [];
+		let s = text;
+		while (s.length > max) {
+			let cut = s.lastIndexOf(". ", max);
+			if (cut < Math.floor(max / 3)) {
+				cut = max - 1;
+			}
+			parts.push(s.slice(0, cut + 1));
+			s = s.slice(cut + 1);
+		}
+		if (s) {
+			parts.push(s);
+		}
+		return parts;
+	},
+
+	async _translate_mymemory(text, target, src) {
+		let tl = target === "zh" ? "zh-CN" : "en";
+		let sl = src === "zh" ? "zh-CN" : "en";
+		let out = [];
+		for (let chunk of this._chunkText(text, 450)) {
+			let url = "https://api.mymemory.translated.net/get?q="
+				+ encodeURIComponent(chunk)
+				+ "&langpair=" + sl + "|" + tl;
+			let data = await this._getJSON(url);
+			if (!data.responseData || data.responseData.translatedText == null) {
+				throw new Error("unexpected response");
+			}
+			out.push(data.responseData.translatedText);
+		}
+		return out.join("");
 	},
 
 	/* ---------------------------------------------------------- *
