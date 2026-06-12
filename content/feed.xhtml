@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>JournalLens</title>
+	<meta charset="utf-8"/>
+	<link rel="localization" href="journallens.ftl"/>
+	<link rel="stylesheet" href="feed.css"/>
+	<script src="feed.js" defer="defer"></script>
+</head>
+<body>
+	<header id="topbar">
+		<div id="brand">
+			<span id="brand-icon">🔭</span>
+			<span id="brand-name">JournalLens</span>
+		</div>
+		<div id="topbar-actions">
+			<button id="refresh-btn" data-l10n-id="journallens-refresh">Refresh</button>
+			<button id="donate-btn" data-l10n-id="journallens-donate" class="donate">♥ Donate</button>
+		</div>
+	</header>
+
+	<div id="layout">
+		<aside id="sidebar">
+			<h2 data-l10n-id="journallens-followed-journals">Followed journals</h2>
+			<ul id="journal-list"></ul>
+
+			<div id="add-journal">
+				<h2 data-l10n-id="journallens-add-journal">Follow a journal</h2>
+				<input id="journal-search-input" type="text"
+					data-l10n-id="journallens-search-placeholder"
+					placeholder="Journal name or ISSN…"/>
+				<ul id="journal-search-results" hidden="hidden"></ul>
+			</div>
+		</aside>
+
+		<main id="content">
+			<div id="status" hidden="hidden"></div>
+			<div id="cards"></div>
+		</main>
+	</div>
+
+	<div id="lightbox" hidden="hidden">
+		<div id="lightbox-inner">
+			<button id="lightbox-close">✕</button>
+			<img id="lightbox-img" src="" alt=""/>
+			<div id="lightbox-caption"></div>
+		</div>
+	</div>
+</body>
+</html>
