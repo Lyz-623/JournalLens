@@ -21,6 +21,9 @@ var JournalLens = {
 	PREF_BRANCH: "extensions.journallens.",
 	CACHE_SCHEMA: "figures-v6-validated-real-labels",
 	DEFAULT_DAYS_SCHEMA: "days-v2-week-default",
+	DAILY_FEED_CACHE_SCHEMA: "daily-feed-v1",
+	DAILY_FEED_CACHE_PREF: "dailyFeedCache",
+	DAILY_FEED_CACHE_MAX_LENGTH: 4000000,
 	CROSSREF_MAILTO: "yunze623@gmail.com",
 	HOMEPAGE_URL: "https://github.com/Lyz-623/JournalLens",
 	DONATE_URL: "https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md",
@@ -318,12 +321,144 @@ var JournalLens = {
 	unfollowJournal(issn) {
 		let journals = this.getJournals().filter(j => j.issn !== issn);
 		this.saveJournals(journals);
-		this._cache.delete(issn);
+		this._deleteFeedCacheForISSN(issn);
 		return journals;
 	},
 
 	clearCache() {
 		this._cache.clear();
+		this.setPref(this.DAILY_FEED_CACHE_PREF, "");
+	},
+
+	/* ---------------------------------------------------------- *
+	 * Daily feed cache
+	 * ---------------------------------------------------------- */
+
+	_localDateKey(date = new Date()) {
+		return [
+			date.getFullYear(),
+			String(date.getMonth() + 1).padStart(2, "0"),
+			String(date.getDate()).padStart(2, "0")
+		].join("-");
+	},
+
+	_feedCacheKey(issn, rows, days, filterArticleTypes) {
+		return [
+			this.DAILY_FEED_CACHE_SCHEMA,
+			this._localDateKey(),
+			issn,
+			rows,
+			days,
+			filterArticleTypes ? "research" : "all"
+		].join("|");
+	},
+
+	_emptyDailyFeedCache() {
+		return {
+			schema: this.DAILY_FEED_CACHE_SCHEMA,
+			day: this._localDateKey(),
+			entries: {}
+		};
+	},
+
+	_readDailyFeedCache() {
+		let raw = this.getPref(this.DAILY_FEED_CACHE_PREF);
+		if (!raw) {
+			return this._emptyDailyFeedCache();
+		}
+		try {
+			let cache = JSON.parse(raw);
+			if (!cache || cache.schema !== this.DAILY_FEED_CACHE_SCHEMA
+					|| cache.day !== this._localDateKey() || !cache.entries) {
+				return this._emptyDailyFeedCache();
+			}
+			return cache;
+		}
+		catch (e) {
+			Zotero.debug("JournalLens: daily feed cache parse failed: " + e);
+			return this._emptyDailyFeedCache();
+		}
+	},
+
+	_writeDailyFeedCache(cache) {
+		try {
+			let raw = JSON.stringify(cache);
+			if (raw.length > this.DAILY_FEED_CACHE_MAX_LENGTH) {
+				Zotero.debug("JournalLens: daily feed cache too large; skipping persistence");
+				return;
+			}
+			this.setPref(this.DAILY_FEED_CACHE_PREF, raw);
+		}
+		catch (e) {
+			Zotero.debug("JournalLens: daily feed cache write failed: " + e);
+		}
+	},
+
+	_sanitizeFeedArticles(articles) {
+		return (articles || []).map(article => ({
+			doi: article.doi || "",
+			title: article.title || "",
+			authors: article.authors || "",
+			journal: article.journal || "",
+			issn: article.issn || "",
+			date: article.date || "",
+			volume: article.volume || "",
+			issue: article.issue || "",
+			pages: article.pages || "",
+			abstract: article.abstract || "",
+			abstractSource: article.abstractSource || "",
+			url: article.url || "",
+			fullTextLinks: article.fullTextLinks || [],
+			pmcid: article.pmcid || null,
+			pubTypes: article.pubTypes || [],
+			isOpenAccess: !!article.isOpenAccess,
+			figures: null,
+			graphicalAbstract: null
+		}));
+	},
+
+	_getDailyFeedCacheEntry(cacheKey) {
+		let cache = this._readDailyFeedCache();
+		let entry = cache.entries[cacheKey];
+		return entry && Array.isArray(entry.articles) ? entry : null;
+	},
+
+	_setDailyFeedCacheEntry(cacheKey, issn, articles) {
+		let cache = this._readDailyFeedCache();
+		cache.entries[cacheKey] = {
+			issn,
+			time: Date.now(),
+			articles: this._sanitizeFeedArticles(articles)
+		};
+		this._writeDailyFeedCache(cache);
+	},
+
+	_deleteDailyFeedCacheEntry(cacheKey) {
+		let cache = this._readDailyFeedCache();
+		if (!cache.entries[cacheKey]) {
+			return;
+		}
+		delete cache.entries[cacheKey];
+		this._writeDailyFeedCache(cache);
+	},
+
+	_deleteFeedCacheForISSN(issn) {
+		for (let key of Array.from(this._cache.keys())) {
+			if (key.split("|")[2] === issn) {
+				this._cache.delete(key);
+			}
+		}
+		let cache = this._readDailyFeedCache();
+		let changed = false;
+		for (let key of Object.keys(cache.entries)) {
+			if (cache.entries[key] && cache.entries[key].issn === issn) {
+				delete cache.entries[key];
+				changed = true;
+			}
+		}
+		if (changed) {
+			this._writeDailyFeedCache(cache);
+		}
 	},
 
 	/* ---------------------------------------------------------- *
@@ -805,26 +940,41 @@ var JournalLens = {
 	},
 
 	async getFeed(issn, { force = false } = {}) {
-		if (force) {
-			this._cache.delete(issn);
-		}
-		let cacheMinutes = parseInt(this.getPref("cacheMinutes")) || 60;
-		let cached = this._cache.get(issn);
-		if (!force && cached && (Date.now() - cached.time) < cacheMinutes * 60000) {
-			return cached.articles;
-		}
 		let rows = parseInt(this.getPref("articlesPerJournal")) || 200;
 		let days = parseInt(this.getPref("daysToFetch")) || 7;
+		let filterArticleTypes = !!this.getPref("filterArticleTypes");
+		let cacheKey = this._feedCacheKey(issn, rows, days, filterArticleTypes);
+
+		if (force) {
+			this._cache.delete(cacheKey);
+			this._deleteDailyFeedCacheEntry(cacheKey);
+		}
+		let cached = this._cache.get(cacheKey);
+		if (!force && cached && cached.day === this._localDateKey()) {
+			return cached.articles;
+		}
+		let persisted = !force && this._getDailyFeedCacheEntry(cacheKey);
+		if (persisted) {
+			let value = {
+				day: this._localDateKey(),
+				time: persisted.time || Date.now(),
+				articles: persisted.articles
+			};
+			this._cache.set(cacheKey, value);
+			return value.articles;
+		}
 
 		let articles = this.dedupeArticles(await this.fetchJournalFeed(issn, rows, days));
 		await this.enrichWithEuropePMC(articles);
 		await this.enrichMissingAbstracts(articles);
-		if (this.getPref("filterArticleTypes")) {
+		if (filterArticleTypes) {
 			articles = this.filterArticleTypes(articles);
 		}
 		articles = this.filterRecentDays(articles, days);
 
-		this._cache.set(issn, { time: Date.now(), articles });
+		let value = { day: this._localDateKey(), time: Date.now(), articles };
+		this._cache.set(cacheKey, value);
+		this._setDailyFeedCacheEntry(cacheKey, issn, articles);
 		return articles;
 	},
 

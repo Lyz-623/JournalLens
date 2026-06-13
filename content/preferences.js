@@ -11,7 +11,6 @@
 			auto: "Follow Zotero",
 			days: "Days to fetch",
 			articles: "Max articles per journal",
-			cache: "Cache duration (minutes)",
 			translate: "Translation service",
 			filterGroup: "Content filter",
 			filter: "Only show research content",
@@ -26,7 +25,6 @@
 			auto: "跟随 Zotero",
 			days: "抓取最近天数",
 			articles: "每刊最多文章数",
-			cache: "缓存时长(分钟)",
 			translate: "翻译服务",
 			filterGroup: "内容过滤",
 			filter: "仅显示研究类内容",
@@ -65,7 +63,6 @@
 		el("pref-language").options[0].textContent = s.auto;
 		el("label-days").textContent = s.days;
 		el("label-articles").textContent = s.articles;
-		el("label-cache").textContent = s.cache;
 		el("label-translate").textContent = s.translate;
 		el("label-filter").textContent = s.filterGroup;
 		el("text-filter").textContent = s.filter;
@@ -91,7 +88,6 @@
 		bindValue("pref-language", "uiLanguage", "auto");
 		bindValue("pref-days", "daysToFetch", 7, value => Math.max(1, Math.min(180, parseInt(value) || 7)));
 		bindValue("pref-articles", "articlesPerJournal", 200, value => Math.max(10, Math.min(500, parseInt(value) || 200)));
-		bindValue("pref-cache", "cacheMinutes", 60, value => Math.max(5, Math.min(1440, parseInt(value) || 60)));
 		bindValue("pref-translate", "translateProvider", "google");
 		bindChecked("pref-filter", "filterArticleTypes", true);
 		bindChecked("pref-figures", "loadFigures", true);

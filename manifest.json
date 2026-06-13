@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "JournalLens",
-	"version": "0.3.7",
+	"version": "0.3.8",
 	"description": "Follow journals inside Zotero: browse configurable recent papers, search title/abstract, recover missing abstracts, validate body/extended figures, and import by DOI.",
 	"author": "yunze",
 	"homepage_url": "https://github.com/Lyz-623/JournalLens",

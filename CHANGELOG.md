@@ -8,6 +8,27 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.8] — 2026-06-13
+
+Daily feed cache patch.
+
+### Added / 新增
+- Added a persistent daily feed cache. After papers are fetched once on a
+  given day, reopening Zotero reuses the same day's cached feed instead of
+  automatically refetching every journal. 增加每日论文流缓存,同一天重开 Zotero
+  会复用缓存。
+- The Refresh button still clears the daily feed cache and forces a fresh
+  fetch. 手动刷新仍会清理缓存并重新抓取。
+
+### Changed / 变更
+- Feed cache invalidates automatically when the local date changes or when
+  feed settings such as fetch window, max articles, or research-content filter
+  change. 跨天或抓取设置变化时自动重新抓取。
+- Removed the old cache-duration setting from the preferences pane because feed
+  caching is now day-based. 设置页移除旧的分钟级缓存选项。
+
+---
+
 ## [0.3.7] — 2026-06-13
 
 Bulk translation patch.

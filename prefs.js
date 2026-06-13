@@ -6,4 +6,3 @@ pref("extensions.journallens.articlesPerJournal", 200);
 pref("extensions.journallens.filterArticleTypes", true);
 pref("extensions.journallens.loadFigures", true);
 pref("extensions.journallens.translateProvider", "google");
-pref("extensions.journallens.cacheMinutes", 60);
