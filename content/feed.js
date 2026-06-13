@@ -16,7 +16,8 @@ var State = {
 	lightboxZoom: 1,
 	lightboxPanX: 0,
 	lightboxPanY: 0,
-	lightboxDrag: null
+	lightboxDrag: null,
+	bulkTranslationRunning: false
 };
 
 function S(id) {
@@ -40,6 +41,7 @@ function applyStaticLabels() {
 	document.getElementById("lang-option-en").textContent = S("lang-en");
 	document.getElementById("lang-option-zh").textContent = S("lang-zh");
 	updateLanguageButtons();
+	updateBulkTranslateButton();
 
 	// donate modal
 	document.getElementById("donate-title").textContent = S("donate-title");
@@ -213,6 +215,7 @@ async function loadFeed(force = false) {
 		empty.className = "empty";
 		empty.textContent = S("no-journals");
 		cards.appendChild(empty);
+		updateBulkTranslateButton();
 		return;
 	}
 
@@ -318,6 +321,7 @@ function renderArticles(articles) {
 	cards.replaceChildren();
 	let visibleArticles = (articles || []).filter(articleMatchesSearch);
 	updateArticleSearchCount((articles || []).length, visibleArticles.length);
+	updateBulkTranslateButton();
 
 	if (!articles || !articles.length) {
 		let empty = document.createElement("div");
@@ -478,33 +482,68 @@ function updateArticleText(article, titleEl, absEl, btn) {
 		setHighlightedText(absEl, translated ? translated.abstract : article.abstract);
 	}
 	btn.textContent = translationButtonLabel(article);
+	btn.disabled = State.bulkTranslationRunning;
+}
+
+function translationProgressLabel(done, total) {
+	return S("translating-all")
+		.replace("{done}", String(done))
+		.replace("{total}", String(total));
+}
+
+function translateFailureLabel(count) {
+	return S("translate-all-failed").replace("{count}", String(count));
+}
+
+function getBulkTranslationArticles() {
+	return (State.articles || []).filter(article => article && article.title);
+}
+
+function updateBulkTranslateButton() {
+	let btn = document.getElementById("translate-all-btn");
+	if (!btn) {
+		return;
+	}
+	let articles = getBulkTranslationArticles();
+	btn.disabled = State.bulkTranslationRunning || !articles.length;
+	if (State.bulkTranslationRunning) {
+		return;
+	}
+	let allShown = articles.length && articles.every(article => article._showTranslated);
+	btn.textContent = S(allShown ? "original-all" : "translate-all");
+}
+
+async function ensureArticleTranslation(article) {
+	let target = JournalLens.getTranslationTarget(article.title);
+	if (!article._tx) {
+		article._tx = {};
+	}
+	if (!article._tx[target]) {
+		let [tt, ta] = await Promise.all([
+			JournalLens.translateText(article.title, target),
+			article.abstract
+				? JournalLens.translateText(article.abstract, target)
+				: Promise.resolve("")
+		]);
+		article._tx[target] = { title: tt, abstract: ta };
+	}
+	article._translationTarget = target;
+	return article._tx[target];
 }
 
 async function toggleTranslate(article, titleEl, absEl, btn) {
 	if (article._showTranslated) {
 		article._showTranslated = false;
 		updateArticleText(article, titleEl, absEl, btn);
+		updateBulkTranslateButton();
 		return;
 	}
 
-	let target = JournalLens.getTranslationTarget(article.title);
 	btn.disabled = true;
 	btn.textContent = S("translating");
 	try {
-		if (!article._tx) {
-			article._tx = {};
-		}
-		if (!article._tx[target]) {
-			let [tt, ta] = await Promise.all([
-				JournalLens.translateText(article.title, target),
-				article.abstract
-					? JournalLens.translateText(article.abstract, target)
-					: Promise.resolve("")
-			]);
-			article._tx[target] = { title: tt, abstract: ta };
-		}
+		await ensureArticleTranslation(article);
 		article._showTranslated = true;
-		article._translationTarget = target;
 		updateArticleText(article, titleEl, absEl, btn);
 	}
 	catch (e) {
@@ -513,6 +552,62 @@ async function toggleTranslate(article, titleEl, absEl, btn) {
 		updateArticleText(article, titleEl, absEl, btn);
 	}
 	btn.disabled = false;
+	updateBulkTranslateButton();
+}
+
+async function toggleTranslateAll() {
+	let articles = getBulkTranslationArticles();
+	if (!articles.length || State.bulkTranslationRunning) {
+		return;
+	}
+	if (articles.every(article => article._showTranslated)) {
+		for (let article of articles) {
+			article._showTranslated = false;
+		}
+		renderArticles(State.articles);
+		return;
+	}
+
+	let btn = document.getElementById("translate-all-btn");
+	let done = 0;
+	let failed = 0;
+	let next = 0;
+	let total = articles.length;
+	let concurrency = Math.min(3, total);
+	State.bulkTranslationRunning = true;
+	btn.disabled = true;
+	btn.textContent = translationProgressLabel(done, total);
+	renderArticles(State.articles);
+
+	async function worker() {
+		while (next < total) {
+			let article = articles[next++];
+			try {
+				await ensureArticleTranslation(article);
+				article._showTranslated = true;
+			}
+			catch (e) {
+				failed++;
+				Zotero.debug("JournalLens: bulk translate failed: " + e);
+			}
+			done++;
+			btn.textContent = translationProgressLabel(done, total);
+			if (done === total || done % concurrency === 0) {
+				renderArticles(State.articles);
+			}
+		}
+	}
+
+	try {
+		await Promise.all(Array.from({ length: concurrency }, () => worker()));
+	}
+	finally {
+		State.bulkTranslationRunning = false;
+		renderArticles(State.articles);
+		if (failed) {
+			window.alert(translateFailureLabel(failed));
+		}
+	}
 }
 
 /* ---------------------------------------------------------- *
@@ -1610,6 +1705,8 @@ function init() {
 	}
 	document.getElementById("refresh-btn")
 		.addEventListener("click", () => loadFeed(true));
+	document.getElementById("translate-all-btn")
+		.addEventListener("click", toggleTranslateAll);
 	initSearch();
 	initArticleSearch();
 	initLightbox();

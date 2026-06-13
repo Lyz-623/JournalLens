@@ -8,6 +8,23 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.7] — 2026-06-13
+
+Bulk translation patch.
+
+### Added / 新增
+- Added a feed-level Translate all button for translating every loaded article
+  title and abstract in one action. 增加一键翻译全部文章标题和摘要。
+- Added bulk translation progress text and a one-click Show all originals
+  state after all loaded articles are translated. 增加批量翻译进度和一键切回原文。
+
+### Changed / 变更
+- Single-article and bulk translation now share the same cached translation
+  path, while bulk requests are limited to a small concurrent worker pool.
+  单篇与批量翻译共用缓存逻辑,并限制并发请求数量。
+
+---
+
 ## [0.3.6] — 2026-06-13
 
 Figure validation and recent-window patch.

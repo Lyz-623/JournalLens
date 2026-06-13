@@ -193,6 +193,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	flex-wrap: wrap;
 	margin-bottom: 12px;
 }
 #article-search-input {
@@ -209,6 +210,9 @@ button:disabled { opacity: 0.5; cursor: default; }
 #article-search-count {
 	color: var(--text-soft);
 	font-size: 12px;
+	white-space: nowrap;
+}
+#translate-all-btn {
 	white-space: nowrap;
 }
 mark.article-match {
