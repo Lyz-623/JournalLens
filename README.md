@@ -33,7 +33,7 @@ JournalLens 面向每天需要跟踪期刊更新的研究者：不用反复打�
 | Feature / 功能 | What it does / 说明 |
 |---|---|
 | Journal following / 关注期刊 | Search by journal name or ISSN through Crossref, then keep a followed-journal list in Zotero. 通过 Crossref 按期刊名或 ISSN 搜索，并在 Zotero 中保存关注列表。 |
-| Recent-paper feed / 近期论文流 | Fetch papers from the last 7 days by default; the range can be saved from 1 to 180 days. 默认抓取近 7 天论文，可在 1 到 180 天之间调整。 |
+| Recent-paper feed / 近期论文流 | Fetch papers from the last 14 days by default; the range can be saved from 1 to 180 days. 默认抓取近 14 天论文，可在 1 到 180 天之间调整。 |
 | Daily cache / 每日缓存 | Reuse the same day's feed after restarting Zotero; Refresh always fetches again. 同一天重启 Zotero 会复用缓存，手动刷新会重新抓取。 |
 | Abstract recovery / 摘要补全 | Recover missing abstracts from Crossref, Europe PMC, and publisher-page metadata. 当摘要缺失时，尝试从 Crossref、Europe PMC 和出版商页面补全。 |
 | Validated figures / 正文 Figure | Show real `Fig. N` and `Extended Fig. N` images, filtering previews, TOC graphics, duplicates, and blank thumbnails. 只显示经过校验的正文图，过滤预览图、TOC 图、重复图和空白缩略图。 |
@@ -43,7 +43,7 @@ JournalLens 面向每天需要跟踪期刊更新的研究者：不用反复打�
 
 ## Install / 安装
 
-1. Download `journallens-0.3.8.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest). / 从 Releases 下载 `journallens-0.3.8.xpi`。
+1. Download `journallens-0.3.9.xpi` from [Releases](https://github.com/Lyz-623/JournalLens/releases/latest). / 从 Releases 下载 `journallens-0.3.9.xpi`。
 2. In Zotero, open **Tools -> Plugins**. / 在 Zotero 中打开 **工具 -> 插件**。
 3. Click the gear icon, choose **Install Plugin From File...**, and select the downloaded `.xpi`. / 点击齿轮图标，选择 **Install Plugin From File... / 从文件安装插件**，然后选择下载的 `.xpi`。
 4. Restart Zotero if prompted. / 如有提示，重启 Zotero。
@@ -75,7 +75,7 @@ Figures are displayed only when a real `Fig. N` or `Extended Fig. N` label and a
 | Setting / 设置 | Default / 默认值 |
 |---|---:|
 | Interface language / 界面语言 | Follow Zotero / 跟随 Zotero |
-| Days to fetch / 抓取天数 | 7 |
+| Days to fetch / 抓取天数 | 14 |
 | Max articles per journal / 每刊最多文章数 | 200 |
 | Daily feed cache / 每日论文流缓存 | On / 开启 |
 | Translation service / 翻译服务 | Google |
@@ -96,9 +96,9 @@ The packaged plugin is created at `build/journallens-<version>.xpi`.
 
 ## Version / 版本
 
-Current version: `0.3.8`, with persistent daily feed cache. Reopening Zotero reuses the same day's fetched papers, while Refresh forces a new fetch.
+Current version: `0.3.9`, with a two-week default feed window. Reopening Zotero still reuses the same day's fetched papers, while Refresh forces a new fetch.
 
-当前版本：`0.3.8`，新增持久化每日论文流缓存。同一天重新打开 Zotero 会复用已抓取论文，点击刷新会强制重新抓取。
+当前版本：`0.3.9`，默认抓取范围改为近两周。同一天重新打开 Zotero 仍会复用已抓取论文，点击刷新会强制重新抓取。
 
 See [CHANGELOG.md](CHANGELOG.md) for full release notes.
 

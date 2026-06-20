@@ -20,7 +20,7 @@ var JournalLens = {
 
 	PREF_BRANCH: "extensions.journallens.",
 	CACHE_SCHEMA: "figures-v6-validated-real-labels",
-	DEFAULT_DAYS_SCHEMA: "days-v2-week-default",
+	DEFAULT_DAYS_SCHEMA: "days-v3-two-week-default",
 	DAILY_FEED_CACHE_SCHEMA: "daily-feed-v1",
 	DAILY_FEED_CACHE_PREF: "dailyFeedCache",
 	DAILY_FEED_CACHE_MAX_LENGTH: 4000000,
@@ -155,9 +155,9 @@ var JournalLens = {
 			this.setPref("cacheSchema", this.CACHE_SCHEMA);
 		}
 		if (this.getPref("defaultDaysSchema") !== this.DEFAULT_DAYS_SCHEMA) {
-			let currentDays = parseInt(this.getPref("daysToFetch")) || 30;
-			if (currentDays === 30) {
-				this.setPref("daysToFetch", 7);
+			let currentDays = parseInt(this.getPref("daysToFetch")) || 14;
+			if (currentDays === 7 || currentDays === 30) {
+				this.setPref("daysToFetch", 14);
 			}
 			this.setPref("defaultDaysSchema", this.DEFAULT_DAYS_SCHEMA);
 		}
@@ -941,7 +941,7 @@ var JournalLens = {
 
 	async getFeed(issn, { force = false } = {}) {
 		let rows = parseInt(this.getPref("articlesPerJournal")) || 200;
-		let days = parseInt(this.getPref("daysToFetch")) || 7;
+		let days = parseInt(this.getPref("daysToFetch")) || 14;
 		let filterArticleTypes = !!this.getPref("filterArticleTypes");
 		let cacheKey = this._feedCacheKey(issn, rows, days, filterArticleTypes);
 

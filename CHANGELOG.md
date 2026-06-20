@@ -8,6 +8,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.9] — 2026-06-21
+
+Two-week feed window patch.
+
+### Changed / 变更
+- Changed the default journal feed window from 7 days to 14 days. 默认抓取范围从近 7 天改为近 14 天。
+- Existing users on the old default 7-day or legacy 30-day setting are migrated to 14 days, while custom non-default values are preserved. 使用旧默认 7 天或历史 30 天设置的用户会迁移到 14 天，自定义的其他天数保持不变。
+
+---
+
 ## [0.3.8] — 2026-06-13
 
 Daily feed cache patch.

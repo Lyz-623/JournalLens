@@ -31,7 +31,7 @@ git push -u origin main
 
 # Create the release with the XPI attached
 & $gh release create $tag $xpi --title "JournalLens $version" --notes @"
-JournalLens $version — follow journals inside Zotero and browse papers from the past month.
+JournalLens $version — follow journals inside Zotero and browse papers from the past two weeks by default.
 
 **Install:** download ``journallens-$version.xpi`` below, then in Zotero: Tools -> Plugins -> gear icon -> Install Plugin From File.
 

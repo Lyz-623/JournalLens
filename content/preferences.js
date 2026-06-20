@@ -86,7 +86,7 @@
 
 	function init() {
 		bindValue("pref-language", "uiLanguage", "auto");
-		bindValue("pref-days", "daysToFetch", 7, value => Math.max(1, Math.min(180, parseInt(value) || 7)));
+		bindValue("pref-days", "daysToFetch", 14, value => Math.max(1, Math.min(180, parseInt(value) || 14)));
 		bindValue("pref-articles", "articlesPerJournal", 200, value => Math.max(10, Math.min(500, parseInt(value) || 200)));
 		bindValue("pref-translate", "translateProvider", "google");
 		bindChecked("pref-filter", "filterArticleTypes", true);
