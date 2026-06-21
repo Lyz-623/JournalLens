@@ -26,8 +26,8 @@ var JournalLens = {
 	DAILY_FEED_CACHE_MAX_LENGTH: 4000000,
 	CROSSREF_MAILTO: "yunze623@gmail.com",
 	HOMEPAGE_URL: "https://github.com/Lyz-623/JournalLens",
-	SPONSOR_URL: "https://github.com/sponsors/Lyz-623",
 	DONATE_URL: "https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md",
+	ISSUES_URL: "https://github.com/Lyz-623/JournalLens/issues",
 
 	_feedWindow: null,
 	_cache: new Map(),
@@ -77,13 +77,13 @@ var JournalLens = {
 			"translate-to-zh": "Translate to 中文",
 			"close": "Close",
 			"donate-title": "Support JournalLens",
-			"donate-intro": "JournalLens is free and open source. Stars, issues, and sharing already help a lot. Optional support helps with testing, maintenance, and releases.",
+			"donate-intro": "JournalLens is free and open source. Stars, issues, and sharing already help a lot. Optional tips are available through the support page.",
 			"donate-paypal": "PayPal",
 			"donate-wechat": "WeChat Pay",
 			"donate-alipay": "Alipay",
 			"donate-thanks": "Thank you! 🙏",
-			"donate-sponsor": "Sponsor on GitHub",
-			"donate-github": "Other payment methods"
+			"donate-support": "Open support page",
+			"donate-issue": "Report an issue"
 		},
 		zh: {
 			"menuitem": "JournalLens — 期刊速览",
@@ -126,13 +126,13 @@ var JournalLens = {
 			"translate-to-zh": "翻译为中文",
 			"close": "关闭",
 			"donate-title": "支持 JournalLens",
-			"donate-intro": "JournalLens 免费开源。Star、反馈问题和推荐分享已经很有帮助；可选支持会用于测试、维护和发布。",
+			"donate-intro": "JournalLens 免费开源。Star、反馈问题和推荐分享已经很有帮助；小额支持方式可以在支持页查看。",
 			"donate-paypal": "PayPal",
 			"donate-wechat": "微信支付",
 			"donate-alipay": "支付宝",
 			"donate-thanks": "谢谢! 🙏",
-			"donate-sponsor": "GitHub Sponsors",
-			"donate-github": "其他支付方式"
+			"donate-support": "打开支持页",
+			"donate-issue": "反馈问题"
 		}
 	},
 
@@ -286,8 +286,8 @@ var JournalLens = {
 		Zotero.launchURL(this.DONATE_URL);
 	},
 
-	openSponsorPage() {
-		Zotero.launchURL(this.SPONSOR_URL);
+	openIssuesPage() {
+		Zotero.launchURL(this.ISSUES_URL);
 	},
 
 	/* ---------------------------------------------------------- *

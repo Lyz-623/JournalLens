@@ -47,8 +47,8 @@ function applyStaticLabels() {
 	document.getElementById("donate-title").textContent = S("donate-title");
 	document.getElementById("donate-intro").textContent = S("donate-intro");
 	document.getElementById("donate-thanks").textContent = S("donate-thanks");
-	document.getElementById("donate-sponsor").textContent = S("donate-sponsor");
-	document.getElementById("donate-github").textContent = S("donate-github");
+	document.getElementById("donate-support").textContent = S("donate-support");
+	document.getElementById("donate-issue").textContent = S("donate-issue");
 }
 
 function setLanguage(lang) {
@@ -1684,15 +1684,15 @@ function initDonate() {
 			modal.hidden = true;
 		}
 	});
-	document.getElementById("donate-sponsor")
-		.addEventListener("click", (event) => {
-			event.preventDefault();
-			JournalLens.openSponsorPage();
-		});
-	document.getElementById("donate-github")
+	document.getElementById("donate-support")
 		.addEventListener("click", (event) => {
 			event.preventDefault();
 			JournalLens.openDonatePage();
+		});
+	document.getElementById("donate-issue")
+		.addEventListener("click", (event) => {
+			event.preventDefault();
+			JournalLens.openIssuesPage();
 		});
 }
 

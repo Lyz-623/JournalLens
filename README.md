@@ -106,8 +106,8 @@ See [CHANGELOG.md](CHANGELOG.md) for full release notes.
 
 ## Support / 支持
 
-JournalLens is free and open source. If it saves you time, a GitHub star already helps a lot. Optional financial support is available through GitHub Sponsors or the support page.
+JournalLens is free and open source. If it saves you time, a GitHub star already helps a lot. Optional financial support is available through the support page.
 
-JournalLens 免费开源。如果它帮你节省了时间，点一个 Star 已经很有帮助；如果愿意支持后续维护，可以通过 GitHub Sponsors 或支持页选择合适方式。
+JournalLens 免费开源。如果它帮你节省了时间，点一个 Star 已经很有帮助；如果愿意支持后续维护，可以通过支持页选择合适方式。
 
-[Sponsor on GitHub](https://github.com/sponsors/Lyz-623) · [Other payment methods](DONATE.md)
+[Support JournalLens](DONATE.md)

@@ -10,7 +10,7 @@ If it saves you time, a star, a bug report, or a small tip all help keep the pro
 
 如果它帮你节省了时间，Star、问题反馈或小额支持都能帮助项目继续维护。
 
-[Sponsor on GitHub](https://github.com/sponsors/Lyz-623) · [Report an issue](https://github.com/Lyz-623/JournalLens/issues) · [Latest release](https://github.com/Lyz-623/JournalLens/releases/latest)
+[Report an issue](https://github.com/Lyz-623/JournalLens/issues) · [Latest release](https://github.com/Lyz-623/JournalLens/releases/latest)
 
 </div>
 
@@ -18,10 +18,10 @@ If it saves you time, a star, a bug report, or a small tip all help keep the pro
 
 | Option / 方式 | Why / 说明 |
 |---|---|
-| [GitHub Sponsors](https://github.com/sponsors/Lyz-623) | Best for GitHub users. It opens the native sponsor page directly from the repository Sponsor button. 适合 GitHub 用户，仓库 Sponsor 按钮会直接进入原生赞助页。 |
 | Star the repository / 给仓库点 Star | Helps more researchers discover JournalLens. 帮助更多研究者发现 JournalLens。 |
 | Open an issue / 提交 issue | Reports bugs, journals that do not parse well, or feature ideas. 反馈 Bug、解析不理想的期刊或功能建议。 |
 | Share with colleagues / 推荐给同事朋友 | Especially useful for research tools that grow by word of mouth. 对研究工具来说，真实推荐非常有价值。 |
+| Optional tip / 可选小额支持 | Helps with testing, maintenance, publisher-page fixes, and releases. 用于测试、维护、修复出版商页面适配和准备发布。 |
 
 ## Payment Methods / 支付方式
 
@@ -29,13 +29,15 @@ Choose whichever method is easiest for you. These are optional tips, not require
 
 选择你最方便的方式即可。这些都是可选支持，不是使用插件的必要条件。
 
-| GitHub Sponsors | PayPal |
-|:---:|:---:|
-| [Sponsor on GitHub](https://github.com/sponsors/Lyz-623)<br/>Monthly or one-time support through GitHub.<br/>通过 GitHub 进行一次性或周期性支持。 | <img src="content/donate/paypal.jpg" width="190" alt="PayPal QR"/><br/>International card / PayPal support.<br/>适合国际支付。 |
+| PayPal | WeChat Pay / 微信支付 | Alipay / 支付宝 |
+|:---:|:---:|:---:|
+| <img src="content/donate/paypal.jpg" width="190" alt="PayPal QR"/><br/>International card / PayPal support.<br/>适合国际支付。 | <img src="content/donate/wechat.jpg" width="190" alt="WeChat Pay QR"/><br/>For Mainland China users.<br/>适合国内用户。 | <img src="content/donate/alipay.jpg" width="190" alt="Alipay QR"/><br/>For Mainland China users.<br/>适合国内用户。 |
 
-| WeChat Pay / 微信支付 | Alipay / 支付宝 |
-|:---:|:---:|
-| <img src="content/donate/wechat.jpg" width="190" alt="WeChat Pay QR"/><br/>For Mainland China users.<br/>适合国内用户。 | <img src="content/donate/alipay.jpg" width="190" alt="Alipay QR"/><br/>For Mainland China users.<br/>适合国内用户。 |
+## Why External Link / 为什么使用外链
+
+GitHub Sponsors is not available to every maintainer region, so the repository Sponsor button links here instead. This page keeps support options simple and lets users choose the payment method that works best for them.
+
+GitHub Sponsors 并不支持所有维护者地区，所以仓库 Sponsor 按钮会链接到这个页面。这样可以保留一个统一入口，同时让用户选择更适合自己的支付方式。
 
 ## Where Support Goes / 支持会用在哪里
 

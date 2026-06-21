@@ -1,3 +1,3 @@
-# Shows GitHub's native Sponsor flow instead of an "External links" dialog.
-# Add buy_me_a_coffee, ko_fi, or open_collective only after those accounts exist.
-github: Lyz-623
+# GitHub Sponsors is not available for every maintainer region.
+# Route the Sponsor button to a support page with multiple payment options.
+custom: ["https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md"]
