@@ -46,10 +46,8 @@ function applyStaticLabels() {
 	// donate modal
 	document.getElementById("donate-title").textContent = S("donate-title");
 	document.getElementById("donate-intro").textContent = S("donate-intro");
-	document.getElementById("cap-paypal").textContent = S("donate-paypal");
-	document.getElementById("cap-wechat").textContent = S("donate-wechat");
-	document.getElementById("cap-alipay").textContent = S("donate-alipay");
 	document.getElementById("donate-thanks").textContent = S("donate-thanks");
+	document.getElementById("donate-sponsor").textContent = S("donate-sponsor");
 	document.getElementById("donate-github").textContent = S("donate-github");
 }
 
@@ -1686,6 +1684,11 @@ function initDonate() {
 			modal.hidden = true;
 		}
 	});
+	document.getElementById("donate-sponsor")
+		.addEventListener("click", (event) => {
+			event.preventDefault();
+			JournalLens.openSponsorPage();
+		});
 	document.getElementById("donate-github")
 		.addEventListener("click", (event) => {
 			event.preventDefault();

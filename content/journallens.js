@@ -26,6 +26,7 @@ var JournalLens = {
 	DAILY_FEED_CACHE_MAX_LENGTH: 4000000,
 	CROSSREF_MAILTO: "yunze623@gmail.com",
 	HOMEPAGE_URL: "https://github.com/Lyz-623/JournalLens",
+	SPONSOR_URL: "https://github.com/sponsors/Lyz-623",
 	DONATE_URL: "https://github.com/Lyz-623/JournalLens/blob/main/DONATE.md",
 
 	_feedWindow: null,
@@ -75,13 +76,14 @@ var JournalLens = {
 			"translate-to-en": "Translate to EN",
 			"translate-to-zh": "Translate to 中文",
 			"close": "Close",
-			"donate-title": "Support JournalLens ♥",
-			"donate-intro": "JournalLens is free and open source. If it saves you time, a small tip keeps the updates coming!",
+			"donate-title": "Support JournalLens",
+			"donate-intro": "JournalLens is free and open source. Stars, issues, and sharing already help a lot. Optional support helps with testing, maintenance, and releases.",
 			"donate-paypal": "PayPal",
 			"donate-wechat": "WeChat Pay",
 			"donate-alipay": "Alipay",
 			"donate-thanks": "Thank you! 🙏",
-			"donate-github": "Open donation page on GitHub"
+			"donate-sponsor": "Sponsor on GitHub",
+			"donate-github": "Other payment methods"
 		},
 		zh: {
 			"menuitem": "JournalLens — 期刊速览",
@@ -123,13 +125,14 @@ var JournalLens = {
 			"translate-to-en": "翻译为英文",
 			"translate-to-zh": "翻译为中文",
 			"close": "关闭",
-			"donate-title": "打赏支持 JournalLens ♥",
-			"donate-intro": "JournalLens 完全免费开源。如果它帮你节省了时间,欢迎打赏支持,你的支持是持续更新的最大动力!",
+			"donate-title": "支持 JournalLens",
+			"donate-intro": "JournalLens 免费开源。Star、反馈问题和推荐分享已经很有帮助；可选支持会用于测试、维护和发布。",
 			"donate-paypal": "PayPal",
 			"donate-wechat": "微信支付",
 			"donate-alipay": "支付宝",
 			"donate-thanks": "谢谢! 🙏",
-			"donate-github": "在 GitHub 上查看打赏页面"
+			"donate-sponsor": "GitHub Sponsors",
+			"donate-github": "其他支付方式"
 		}
 	},
 
@@ -281,6 +284,10 @@ var JournalLens = {
 
 	openDonatePage() {
 		Zotero.launchURL(this.DONATE_URL);
+	},
+
+	openSponsorPage() {
+		Zotero.launchURL(this.SPONSOR_URL);
 	},
 
 	/* ---------------------------------------------------------- *

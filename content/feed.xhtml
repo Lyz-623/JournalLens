@@ -21,11 +21,11 @@
 			<span id="lang-label">Language</span>
 			<div id="lang-toggle" class="segmented" role="group" aria-label="Language">
 				<button type="button" data-lang="auto" id="lang-option-auto">Auto</button>
-				<button type="button" data-lang="zh" id="lang-option-zh">中文</button>
+				<button type="button" data-lang="zh" id="lang-option-zh">ZH</button>
 				<button type="button" data-lang="en" id="lang-option-en">EN</button>
 			</div>
 			<button id="refresh-btn">Refresh</button>
-			<button id="donate-btn" class="donate">♥ Donate</button>
+			<button id="donate-btn" class="donate">Donate</button>
 		</div>
 	</header>
 
@@ -33,7 +33,7 @@
 		<aside id="sidebar">
 			<div id="add-journal">
 				<h2 id="h-add">Follow a journal</h2>
-				<input id="journal-search-input" type="text" placeholder="Journal name or ISSN…"/>
+				<input id="journal-search-input" type="text" placeholder="Journal name or ISSN"/>
 				<ul id="journal-search-results" hidden="hidden"></ul>
 			</div>
 
@@ -43,7 +43,7 @@
 
 		<main id="content">
 			<div id="feed-tools">
-				<input id="article-search-input" type="search" placeholder="Search title or abstract…"/>
+				<input id="article-search-input" type="search" placeholder="Search title or abstract"/>
 				<button id="translate-all-btn" type="button">Translate all</button>
 				<span id="article-search-count"></span>
 			</div>
@@ -56,17 +56,17 @@
 	<div id="lightbox" hidden="hidden">
 		<div id="lightbox-inner">
 			<div id="lightbox-toolbar">
-				<button id="lightbox-prev" type="button">‹</button>
-				<button id="lightbox-zoom-out" type="button">−</button>
+				<button id="lightbox-prev" type="button">&lt;</button>
+				<button id="lightbox-zoom-out" type="button">-</button>
 				<button id="lightbox-zoom-reset" type="button">100%</button>
 				<button id="lightbox-zoom-in" type="button">+</button>
-				<button id="lightbox-next" type="button">›</button>
-				<button id="lightbox-close" type="button">✕</button>
+				<button id="lightbox-next" type="button">&gt;</button>
+				<button id="lightbox-close" type="button">x</button>
 			</div>
 			<div id="lightbox-stage">
-				<button id="lightbox-nav-prev" class="lightbox-nav" type="button">‹</button>
+				<button id="lightbox-nav-prev" class="lightbox-nav" type="button">&lt;</button>
 				<img id="lightbox-img" src="" alt=""/>
-				<button id="lightbox-nav-next" class="lightbox-nav" type="button">›</button>
+				<button id="lightbox-nav-next" class="lightbox-nav" type="button">&gt;</button>
 			</div>
 			<div id="lightbox-caption"></div>
 		</div>
@@ -75,25 +75,14 @@
 	<!-- Donation modal -->
 	<div id="donate-modal" hidden="hidden">
 		<div id="donate-inner">
-			<button id="donate-close">✕</button>
-			<h2 id="donate-title">Support JournalLens ♥</h2>
+			<button id="donate-close">x</button>
+			<h2 id="donate-title">Support JournalLens</h2>
 			<p id="donate-intro"></p>
-			<div id="donate-grid">
-				<figure class="donate-item">
-					<img src="donate/paypal.jpg" alt="PayPal"/>
-					<figcaption id="cap-paypal">PayPal</figcaption>
-				</figure>
-				<figure class="donate-item">
-					<img src="donate/wechat.jpg" alt="WeChat Pay"/>
-					<figcaption id="cap-wechat">WeChat Pay</figcaption>
-				</figure>
-				<figure class="donate-item">
-					<img src="donate/alipay.jpg" alt="Alipay"/>
-					<figcaption id="cap-alipay">Alipay</figcaption>
-				</figure>
+			<div id="donate-actions">
+				<a id="donate-sponsor" class="donate-action donate-action-primary" href="#">Sponsor on GitHub</a>
+				<a id="donate-github" class="donate-action donate-action-secondary" href="#">Other payment methods</a>
 			</div>
-			<p id="donate-thanks">Thank you! 🙏</p>
-			<a id="donate-github" href="#">Open donation page on GitHub</a>
+			<p id="donate-thanks">Thank you.</p>
 		</div>
 	</div>
 </body>

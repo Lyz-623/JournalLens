@@ -8,7 +8,7 @@ Follow journals in Zotero, scan recent papers, inspect validated article figures
 
 在 Zotero 里关注期刊、浏览近期论文、查看经过校验的正文 Figure、翻译论文信息，并通过 DOI 一键保存到文献库。
 
-[Latest release](https://github.com/Lyz-623/JournalLens/releases/latest) · [Changelog](CHANGELOG.md) · [Support](#support--buy-me-a-coffee)
+[Latest release](https://github.com/Lyz-623/JournalLens/releases/latest) · [Changelog](CHANGELOG.md) · [Support](DONATE.md)
 
 </div>
 
@@ -104,16 +104,10 @@ See [CHANGELOG.md](CHANGELOG.md) for full release notes.
 
 完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
-## Support / Buy Me a Coffee
+## Support / 支持
 
-JournalLens is free and open source. If it saves you time, a GitHub star is already a kind boost; if you would like to support continued updates, you can buy me a coffee below.
+JournalLens is free and open source. If it saves you time, a GitHub star already helps a lot. Optional financial support is available through GitHub Sponsors or the support page.
 
-JournalLens 是免费开源项目。如果它帮你节省了时间，点一个 Star 已经是很好的支持；如果你愿意支持后续维护，也可以请我喝杯咖啡。
+JournalLens 免费开源。如果它帮你节省了时间，点一个 Star 已经很有帮助；如果愿意支持后续维护，可以通过 GitHub Sponsors 或支持页选择合适方式。
 
-| PayPal | WeChat Pay / 微信支付 | Alipay / 支付宝 |
-|:---:|:---:|:---:|
-| <img src="content/donate/paypal.jpg" width="180" alt="PayPal QR"/> | <img src="content/donate/wechat.jpg" width="180" alt="WeChat Pay QR"/> | <img src="content/donate/alipay.jpg" width="180" alt="Alipay QR"/> |
-
-More details: [DONATE.md](DONATE.md)
-
-更多说明：[DONATE.md](DONATE.md)
+[Sponsor on GitHub](https://github.com/sponsors/Lyz-623) · [Other payment methods](DONATE.md)

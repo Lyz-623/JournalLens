@@ -421,21 +421,34 @@ mark.article-match {
 /* donate modal */
 #donate-inner { align-items: center; text-align: center; max-width: 720px; }
 #donate-title { margin: 4px 0; }
-#donate-intro { color: var(--text-soft); max-width: 560px; line-height: 1.5; margin: 0 0 4px; }
-#donate-grid { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
-.donate-item { margin: 0; }
-.donate-item img {
-	width: 180px;
-	height: 180px;
-	object-fit: contain;
-	border: 1px solid var(--border);
-	border-radius: 8px;
-	background: #fff;
-}
-.donate-item figcaption { margin-top: 6px; font-weight: 600; }
+#donate-intro { color: var(--text-soft); max-width: 560px; line-height: 1.5; margin: 0; }
 #donate-thanks { font-size: 15px; margin: 4px 0 0; }
-#donate-github { color: var(--accent); font-size: 12px; cursor: pointer; text-decoration: none; }
-#donate-github:hover { text-decoration: underline; }
+#donate-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: center;
+}
+.donate-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 34px;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	text-decoration: none;
+}
+.donate-action-primary { background: var(--accent); color: #fff; }
+.donate-action-primary:hover { background: var(--accent-strong); }
+.donate-action-secondary {
+	background: var(--panel);
+	border: 1px solid var(--border);
+	color: var(--text);
+}
+.donate-action-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
 .empty {
 	text-align: center;
